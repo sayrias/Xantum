@@ -265,6 +265,7 @@ build_windows_wine() {
     cd - > /dev/null
     
     # Oluşan EXE ve paketleri gerçek dizine taşı
+    mkdir -p dist-electron/
     cp -r "$BUILD_LINK/dist-electron/"*.exe dist-electron/ 2>/dev/null || true
     cp -r "$BUILD_LINK/dist-electron/"*-unpacked dist-electron/ 2>/dev/null || true
     rm -rf "$BUILD_LINK"
