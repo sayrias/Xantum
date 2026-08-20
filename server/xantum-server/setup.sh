@@ -468,6 +468,7 @@ install_backend_api() {
         fi
         
         npm install
+        pm2 delete nexusvpn-backend 2>/dev/null || true
         pm2 restart xantum-backend || pm2 start server.js --name "xantum-backend"
         pm2 save
         ok "Backend API güncellendi ve başlatıldı."

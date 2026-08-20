@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import logoImg from './assets/logo.png'
 import ConnectionButton from './components/ConnectionButton.jsx'
 import StatusPanel from './components/StatusPanel.jsx'
 import StatsPanel from './components/StatsPanel.jsx'
@@ -89,7 +90,9 @@ export default function App() {
         {/* Custom titlebar */}
         <div className="titlebar">
           <div className="titlebar-logo">
-            <div className="titlebar-logo-icon"><i className="fas fa-shield-alt"></i></div>
+            <div className="titlebar-logo-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img src={logoImg} alt="logo" style={{ width: '26px', height: '26px', objectFit: 'contain' }} />
+            </div>
             <span className="titlebar-title">Xantum</span>
           </div>
           
