@@ -1,0 +1,895 @@
+/* ============================================================
+   NexusVPN — Glassmorphism Dark Mode UI
+   Tasarım: Premium, modern, canlı
+   ============================================================ */
+
+/* ---- Google Fonts zaten index.html'de yüklü ---- */
+
+/* ---- CSS Değişkenleri (Design Tokens) ---- */
+:root {
+  /* Renk Paleti */
+  --color-bg-primary:    #070b14;
+  --color-bg-secondary:  #0d1526;
+  --color-bg-card:       rgba(255, 255, 255, 0.04);
+  --color-bg-card-hover: rgba(255, 255, 255, 0.07);
+  
+  /* Gradient'ler */
+  --gradient-primary:    linear-gradient(135deg, #6C63FF 0%, #3ECFCF 100%);
+  --gradient-connected:  linear-gradient(135deg, #00d4aa 0%, #00b4d8 100%);
+  --gradient-disconnected: linear-gradient(135deg, #ff4560 0%, #ff6b6b 100%);
+  --gradient-connecting: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+  --gradient-glow:       radial-gradient(ellipse at center, rgba(108, 99, 255, 0.3) 0%, transparent 70%);
+  
+  /* Accent renkler */
+  --accent-purple:  #6C63FF;
+  --accent-cyan:    #3ECFCF;
+  --accent-green:   #00d4aa;
+  --accent-red:     #ff4560;
+  --accent-orange:  #f7971e;
+  
+  /* Metin */
+  --text-primary:   #f0f4ff;
+  --text-secondary: #8892a4;
+  --text-muted:     #4a5568;
+  
+  /* Border */
+  --border-glass:   rgba(255, 255, 255, 0.08);
+  --border-glow:    rgba(108, 99, 255, 0.4);
+  
+  /* Glassmorphism */
+  --glass-blur:     20px;
+  --glass-bg:       rgba(255, 255, 255, 0.04);
+  --glass-border:   1px solid rgba(255, 255, 255, 0.08);
+  
+  /* Gölgeler */
+  --shadow-card:    0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-glow-purple: 0 0 40px rgba(108, 99, 255, 0.3);
+  --shadow-glow-cyan:   0 0 40px rgba(62, 207, 207, 0.3);
+  --shadow-glow-green:  0 0 40px rgba(0, 212, 170, 0.4);
+  
+  /* Tipografi */
+  --font-main: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  /* Animasyon */
+  --transition-fast:   0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow:   0.4s ease;
+  
+  /* Boyutlar */
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+  --radius-xl:  24px;
+  --radius-full: 9999px;
+}
+
+/* ---- Reset & Base ---- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body {
+  font-family: var(--font-main);
+  background: var(--color-bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ============================================================
+   ARKA PLAN — Dinamik gradient mesh
+   ============================================================ */
+.app-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: var(--color-bg-primary);
+  overflow: hidden;
+}
+
+.app-background::before {
+  content: '';
+  position: absolute;
+  top: -30%;
+  left: -20%;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(circle, rgba(108, 99, 255, 0.15) 0%, transparent 70%);
+  animation: pulse-bg 6s ease-in-out infinite;
+}
+
+.app-background::after {
+  content: '';
+  position: absolute;
+  bottom: -20%;
+  right: -10%;
+  width: 50%;
+  height: 50%;
+  background: radial-gradient(circle, rgba(62, 207, 207, 0.1) 0%, transparent 70%);
+  animation: pulse-bg 8s ease-in-out infinite reverse;
+}
+
+@keyframes pulse-bg {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+
+/* ============================================================
+   TITLEBAR — Sürüklenebilir özel başlık çubuğu
+   ============================================================ */
+.titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  -webkit-app-region: drag;
+  app-region: drag;
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.titlebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.titlebar-logo-icon {
+  width: 24px;
+  height: 24px;
+  background: var(--gradient-primary);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 0 12px rgba(108, 99, 255, 0.5);
+}
+
+.titlebar-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.titlebar-controls {
+  display: flex;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.titlebar-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all var(--transition-fast);
+  backdrop-filter: blur(10px);
+}
+
+.titlebar-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.titlebar-btn.close:hover {
+  background: rgba(255, 69, 96, 0.3);
+  color: #ff4560;
+}
+
+/* ============================================================
+   FORMS & INPUTS
+   ============================================================ */
+.toggle-btn {
+  color: white;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.3s, color 0.3s;
+  outline: none;
+}
+
+/* ============================================================
+   ANA LAYOUT
+   ============================================================ */
+.app-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 0 0 16px;
+}
+
+.app-main {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.app-main::-webkit-scrollbar {
+  width: 4px;
+}
+.app-main::-webkit-scrollbar-track { background: transparent; }
+.app-main::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+}
+
+/* ============================================================
+   KART — Glass Card bileşeni
+   ============================================================ */
+.glass-card {
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  padding: 16px;
+  box-shadow: var(--shadow-card);
+  transition: all var(--transition-normal);
+}
+
+.glass-card:hover {
+  background: var(--color-bg-card-hover);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ============================================================
+   BAĞLANTI BÖLÜMÜ — Merkezi halka & buton
+   ============================================================ */
+.connection-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 16px;
+  gap: 20px;
+  position: relative;
+}
+
+/* Dış parlak çember */
+.connection-ring {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.connection-ring-outer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: all 0.6s ease;
+}
+
+/* Bağlı değil */
+.connection-ring-outer.disconnected {
+  border-color: rgba(255, 69, 96, 0.3);
+  box-shadow: 0 0 30px rgba(255, 69, 96, 0.15);
+}
+
+/* Bağlanıyor — dönen gradient */
+.connection-ring-outer.connecting {
+  border-color: transparent;
+  animation: spin-ring 1.2s linear infinite;
+  background: 
+    linear-gradient(var(--color-bg-primary), var(--color-bg-primary)) padding-box,
+    var(--gradient-connecting) border-box;
+}
+
+/* Bağlı */
+.connection-ring-outer.connected {
+  border-color: rgba(0, 212, 170, 0.5);
+  box-shadow: 0 0 40px rgba(0, 212, 170, 0.3), 0 0 80px rgba(0, 212, 170, 0.1);
+  animation: pulse-ring 2.5s ease-in-out infinite;
+}
+
+@keyframes spin-ring {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes pulse-ring {
+  0%, 100% { box-shadow: 0 0 30px rgba(0, 212, 170, 0.3), 0 0 60px rgba(0, 212, 170, 0.1); }
+  50%       { box-shadow: 0 0 50px rgba(0, 212, 170, 0.5), 0 0 100px rgba(0, 212, 170, 0.2); }
+}
+
+/* İç çember */
+.connection-ring-inner {
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Ana buton */
+.connect-button {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all var(--transition-slow);
+  z-index: 1;
+  overflow: hidden;
+}
+
+.connect-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.connect-button:hover::before { opacity: 1; }
+
+.connect-button.disconnected {
+  background: linear-gradient(145deg, rgba(255,69,96,0.2), rgba(255,69,96,0.1));
+  border: 1.5px solid rgba(255, 69, 96, 0.4);
+  box-shadow: inset 0 0 30px rgba(255,69,96,0.1);
+}
+
+.connect-button.disconnected::before {
+  background: linear-gradient(145deg, rgba(255,69,96,0.3), rgba(255,69,96,0.15));
+}
+
+.connect-button.connecting {
+  background: linear-gradient(145deg, rgba(247,151,30,0.2), rgba(247,151,30,0.1));
+  border: 1.5px solid rgba(247,151,30,0.4);
+  cursor: not-allowed;
+}
+
+.connect-button.connected {
+  background: linear-gradient(145deg, rgba(0,212,170,0.25), rgba(0,180,216,0.15));
+  border: 1.5px solid rgba(0, 212, 170, 0.5);
+  box-shadow: 0 0 30px rgba(0,212,170,0.2), inset 0 0 30px rgba(0,212,170,0.05);
+}
+
+.connect-button.connected::before {
+  background: linear-gradient(145deg, rgba(0,212,170,0.35), rgba(0,180,216,0.2));
+}
+
+.connect-button:active:not(.connecting) {
+  transform: scale(0.96);
+}
+
+.connect-btn-icon {
+  font-size: 28px;
+  line-height: 1;
+  transition: transform var(--transition-normal);
+}
+
+.connect-button:hover .connect-btn-icon {
+  transform: scale(1.1);
+}
+
+.connect-btn-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.connect-button.disconnected .connect-btn-label { color: #ff4560; }
+.connect-button.connecting .connect-btn-label   { color: #f7971e; }
+.connect-button.connected .connect-btn-label    { color: #00d4aa; }
+
+/* Spinner (bağlanıyor durumu) */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(247,151,30,0.2);
+  border-top-color: #f7971e;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   DURUM KARTI
+   ============================================================ */
+.status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.status-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.status-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-badge.connected {
+  background: rgba(0, 212, 170, 0.15);
+  border: 1px solid rgba(0, 212, 170, 0.3);
+  color: #00d4aa;
+}
+
+.status-badge.disconnected {
+  background: rgba(255, 69, 96, 0.12);
+  border: 1px solid rgba(255, 69, 96, 0.25);
+  color: #ff4560;
+}
+
+.status-badge.connecting {
+  background: rgba(247, 151, 30, 0.12);
+  border: 1px solid rgba(247, 151, 30, 0.25);
+  color: #f7971e;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.status-badge.connected .status-dot {
+  background: #00d4aa;
+  box-shadow: 0 0 6px #00d4aa;
+  animation: blink-dot 2s ease-in-out infinite;
+}
+
+.status-badge.disconnected .status-dot { background: #ff4560; }
+.status-badge.connecting .status-dot {
+  background: #f7971e;
+  animation: blink-dot 0.8s ease-in-out infinite;
+}
+
+@keyframes blink-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* IP Bilgileri */
+.ip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.2);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.ip-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ip-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ip-value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.ip-flag {
+  font-size: 20px;
+}
+
+/* Uptime */
+.uptime-display {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--accent-cyan);
+  letter-spacing: 2px;
+}
+
+/* ============================================================
+   İSTATİSTİKLER KARTI
+   ============================================================ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: rgba(0,0,0,0.2);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255,255,255,0.05);
+  transition: all var(--transition-fast);
+}
+
+.stat-item:hover {
+  border-color: rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.3);
+}
+
+.stat-icon-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.stat-arrow-up   { color: #00d4aa; }
+.stat-arrow-down { color: #6C63FF; }
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.stat-unit {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   SUNUCU BİLGİSİ
+   ============================================================ */
+.server-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.server-flag {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  background: rgba(255,255,255,0.05);
+  border: var(--glass-border);
+  flex-shrink: 0;
+}
+
+.server-info {
+  flex: 1;
+}
+
+.server-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.server-detail {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  margin-top: 2px;
+}
+
+.server-ping {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.ping-value {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: #00d4aa;
+}
+
+.ping-label {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   CONFIG SEÇİM PANELİ
+   ============================================================ */
+.config-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.config-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+.config-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.config-item:hover {
+  background: rgba(108, 99, 255, 0.1);
+  border-color: rgba(108, 99, 255, 0.3);
+}
+
+.config-item.active {
+  background: rgba(108, 99, 255, 0.15);
+  border-color: rgba(108, 99, 255, 0.4);
+}
+
+.config-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.config-path {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+/* Import butonu */
+.btn-import {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  border: 1px dashed rgba(108, 99, 255, 0.3);
+  background: rgba(108, 99, 255, 0.05);
+  color: var(--accent-purple);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-import:hover {
+  background: rgba(108, 99, 255, 0.12);
+  border-color: rgba(108, 99, 255, 0.5);
+  box-shadow: 0 0 20px rgba(108, 99, 255, 0.15);
+}
+
+/* ============================================================
+   TITLEBAR TABS (Navbar)
+   ============================================================ */
+.titlebar-tabs {
+  display: flex;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  align-items: center;
+}
+
+.titlebar-tab-btn {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  max-width: 34px; /* Icon width approx */
+  white-space: nowrap;
+}
+
+.titlebar-tab-btn:hover {
+  color: var(--text-primary);
+  max-width: 140px; /* Expand on hover */
+}
+
+.titlebar-tab-btn.active {
+  color: var(--text-primary);
+}
+
+.titlebar-tab-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  width: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.titlebar-tab-text {
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.5px;
+}
+
+.titlebar-tab-btn:hover .titlebar-tab-text {
+  opacity: 1;
+  max-width: 80px;
+  margin-left: 4px;
+}
+
+/* ============================================================
+   HATA & BİLGİ MESAJLARI
+   ============================================================ */
+.alert {
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  animation: slideIn 0.3s ease;
+}
+
+.alert-error {
+  background: rgba(255, 69, 96, 0.12);
+  border: 1px solid rgba(255, 69, 96, 0.25);
+  color: #ff6b6b;
+}
+
+.alert-info {
+  background: rgba(108, 99, 255, 0.12);
+  border: 1px solid rgba(108, 99, 255, 0.25);
+  color: #8b85ff;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   SCROLLBAR & GENEL
+   ============================================================ */
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+}
+
+/* Yükleme durumu */
+.skeleton {
+  background: linear-gradient(90deg, 
+    rgba(255,255,255,0.04) 25%, 
+    rgba(255,255,255,0.08) 50%, 
+    rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Yükleme spinnerı */
+.loading-dot {
+  display: inline-block;
+  animation: blink-dot 1s ease-in-out infinite;
+}
+.loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Responsive */
+@media (max-height: 600px) {
+  .connection-ring { width: 140px; height: 140px; }
+  .connect-button { width: 95px; height: 95px; }
+  .connection-section { padding: 12px 16px 8px; gap: 12px; }
+}
