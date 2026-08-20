@@ -1,0 +1,17 @@
+# Özel Dosyalar (Asla Github'a yüklenmemeli)
+client/config.json
+server/xantum-server/backend/.env
+
+# Klasörler
+node_modules/
+dist/
+dist-electron/
+.npm/
+.yarn/
+.xantum-build-tmp/
+*.log
+*.sqlite
+*.sqlite3
+
+# OS Mac
+.DS_Store
