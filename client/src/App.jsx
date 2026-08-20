@@ -90,8 +90,8 @@ export default function App() {
         {/* Custom titlebar */}
         <div className="titlebar">
           <div className="titlebar-logo">
-            <div className="titlebar-logo-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src={logoImg} alt="logo" style={{ width: '26px', height: '26px', objectFit: 'contain' }} />
+            <div className="titlebar-logo-icon">
+              <img src={logoImg} alt="logo" style={{ width: '30px', height: '30px', objectFit: 'contain' }} />
             </div>
             <span className="titlebar-title">Xantum</span>
           </div>
