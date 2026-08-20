@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-#  NexusVPN — Ağ Durumu ve Peer JSON Çıktısı
+#  Xantum — Ağ Durumu ve Peer JSON Çıktısı
 #  Hamachi benzeri LAN IP'lerini çekmek için
 # ============================================================
 if [[ $EUID -ne 0 ]]; then echo '{"error": "Root gerekli"}'; exit 1; fi

@@ -90,7 +90,7 @@ export default function App() {
         <div className="titlebar">
           <div className="titlebar-logo">
             <div className="titlebar-logo-icon"><i className="fas fa-shield-alt"></i></div>
-            <span className="titlebar-title">NexusVPN</span>
+            <span className="titlebar-title">Xantum</span>
           </div>
           
           <div className="titlebar-tabs">
@@ -213,7 +213,7 @@ export default function App() {
           flexShrink: 0,
         }}>
           <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-            NexusVPN v1.0.0
+            Xantum v1.0.0
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <div style={{

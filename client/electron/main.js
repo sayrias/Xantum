@@ -37,7 +37,7 @@ process.on('uncaughtException', (err) => {
 })
 
 // ---- Gelişmiş Log Sistemi (Tarih bazlı klasörler) ----
-// Üretim: ~/.config/NexusVPN/logs/YYYY-MM-DD/
+// Üretim: ~/.config/Xantum/logs/YYYY-MM-DD/
 // Geliştirme: client/logs/YYYY-MM-DD/
 const logBaseDir = app.isPackaged
   ? path.join(app.getPath('userData'), 'logs')
@@ -173,7 +173,7 @@ function createTray() {
   const updateTrayMenu = (connected = false) => {
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: 'NexusVPN',
+        label: 'Xantum',
         enabled: false,
       },
       { type: 'separator' },
@@ -207,7 +207,7 @@ function createTray() {
     ])
     
     tray.setContextMenu(contextMenu)
-    tray.setToolTip(connected ? 'NexusVPN — Bağlı 🇩🇪' : 'NexusVPN — Bağlantı Kesildi')
+    tray.setToolTip(connected ? 'Xantum — Bağlı 🇩🇪' : 'Xantum — Bağlantı Kesildi')
   }
   
   updateTrayMenu(false)
@@ -361,7 +361,7 @@ ipcMain.handle('get-network-status', async (event) => {
 // === YENİ: OTOMATİK KAYIT (API ÜZERİNDEN) ===
 ipcMain.handle('auto-register-vpn', async () => {
   try {
-    const configPath = path.join(app.getPath('userData'), 'NexusVPN.conf')
+    const configPath = path.join(app.getPath('userData'), 'Xantum.conf')
     // Geliştirme/test aşamasındaki hatalı configleri temizlemek için her seferinde yeni alıyoruz
     if (fs.existsSync(configPath)) {
       try { fs.unlinkSync(configPath) } catch (e) {}

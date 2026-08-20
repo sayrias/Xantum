@@ -1,12 +1,12 @@
-# 🚀 NexusVPN (v1.0.0)
+# 🚀 Xantum (v1.0.0)
 
 Kendi VDS'inizde barındırabileceğiniz, **Sıfır Ayar (Zero-Config)** ile çalışan ve **Discord tarzı WebRTC Ses Odaları** sunan yeni nesil P2P Oyuncu Ağı ve VPN Çözümü!
 
-## 🌟 Neden NexusVPN?
+## 🌟 Neden Xantum?
 
 Hamachi, Radmin VPN gibi uygulamalara bağımlı kalmadan kendi yüksek hızlı oyun ağınızı kurun!  
 Arkadaşlarınızın IP adresi girmesine, şifre ezberlemesine veya ayar yapmasına gerek yok.  
-Gönderdiğiniz `NexusVPN` uygulamasını açıp **Bağlan** tuşuna basmaları yeterlidir!
+Gönderdiğiniz `Xantum` uygulamasını açıp **Bağlan** tuşuna basmaları yeterlidir!
 
 ### ✨ Temel Özellikler
 * ⚡ **Zero-Config Katılım:** Uygulamayı açınca otomatik bağlanır
@@ -21,9 +21,9 @@ Gönderdiğiniz `NexusVPN` uygulamasını açıp **Bağlan** tuşuna basmaları 
 ## 📂 Proje Yapısı
 
 ```
-NexusVPN/
-├── nexusvpn.sh          # Linux kontrol paneli
-├── nexusvpn.bat         # Windows kontrol paneli
+Xantum/
+├── xantum.sh          # Linux kontrol paneli
+├── xantum.bat         # Windows kontrol paneli
 ├── client/              # Electron + React masaüstü uygulaması
 │   ├── electron/        # Electron ana process
 │   │   ├── main.js      # Ana process, pencere yönetimi, log sistemi
@@ -32,7 +32,7 @@ NexusVPN/
 │       └── components/  # UI bileşenleri
 ├── server/
 │   ├── backend/         # Express + Socket.IO API sunucusu
-│   └── nexusvpn-server/ # VDS kurulum scriptleri
+│   └── xantum-server/ # VDS kurulum scriptleri
 │       ├── setup.sh     # Ana kurulum scripti
 │       ├── add-peer-api.sh
 │       └── ...
@@ -51,13 +51,13 @@ NexusVPN/
 
 ### 1. Sunucu Kur (Tek seferlik)
 ```bash
-bash nexusvpn.sh  # → Seçenek 1
+bash xantum.sh  # → Seçenek 1
 ```
 Açılan ekranda VDS IP ve SSH bilgilerini girin. Script her şeyi otomatik kurar ve sana **IP + Token** verir.
 
 ### 2. İstemci Derle (Arkadaşlara dağıt)
 ```bash
-bash nexusvpn.sh  # → Seçenek 2
+bash xantum.sh  # → Seçenek 2
 ```
 Derleme bitince `client/dist-electron/` içinde `.AppImage`, `.deb` ve `.exe` dosyaları hazır olur.
 
@@ -93,5 +93,5 @@ client/logs/
 ```
 
 **Konum:**
-- Linux: `~/.config/NexusVPN/logs/`
-- Windows: `%APPDATA%\NexusVPN\logs\`
+- Linux: `~/.config/Xantum/logs/`
+- Windows: `%APPDATA%\Xantum\logs\`

@@ -22,7 +22,7 @@ export default function ChatTab({ connected, publicIp }) {
 
   const getNickname = () => {
     try {
-      const s = localStorage.getItem('nexus_settings');
+      const s = localStorage.getItem('xantum_settings');
       if (s) {
         const p = JSON.parse(s);
         if (p.nickname && p.nickname.trim().length > 0) return p.nickname;
@@ -35,7 +35,7 @@ export default function ChatTab({ connected, publicIp }) {
 
   const getMasterVolume = () => {
     try {
-      const s = JSON.parse(localStorage.getItem('nexus_settings'));
+      const s = JSON.parse(localStorage.getItem('xantum_settings'));
       if (s && s.masterVolume !== undefined) return s.masterVolume / 100;
     } catch (e) {}
     return 1;
@@ -43,7 +43,7 @@ export default function ChatTab({ connected, publicIp }) {
 
   const getSettings = () => {
     try {
-      return JSON.parse(localStorage.getItem('nexus_settings') || '{}');
+      return JSON.parse(localStorage.getItem('xantum_settings') || '{}');
     } catch (e) {
       return {};
     }
@@ -87,13 +87,13 @@ export default function ChatTab({ connected, publicIp }) {
 
     const onClickClose = () => setContextMenu(null);
 
-    window.addEventListener('nexus_settings_update', onSettingsUpdate);
-    window.addEventListener('nexus_profile_update', onProfileUpdate);
+    window.addEventListener('xantum_settings_update', onSettingsUpdate);
+    window.addEventListener('xantum_profile_update', onProfileUpdate);
     window.addEventListener('click', onClickClose);
 
     return () => {
-      window.removeEventListener('nexus_settings_update', onSettingsUpdate);
-      window.removeEventListener('nexus_profile_update', onProfileUpdate);
+      window.removeEventListener('xantum_settings_update', onSettingsUpdate);
+      window.removeEventListener('xantum_profile_update', onProfileUpdate);
       window.removeEventListener('click', onClickClose);
     };
   }, [userVolumes]);

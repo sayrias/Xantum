@@ -1,9 +1,9 @@
 @echo off
 chcp 65001 >nul
-:: NexusVPN Uzaktan Kurulum (Deploy) Scripti (Windows için)
+:: Xantum Uzaktan Kurulum (Deploy) Scripti (Windows için)
 :: Bu script kendi bilgisayarınızda çalıştırılır ve kurulum dosyalarını VDS'e atıp orada çalıştırır.
 
-echo [NexusVPN] Uzaktan VDS Kurulum Aracina Hos Geldiniz!
+echo [Xantum] Uzaktan VDS Kurulum Aracina Hos Geldiniz!
 echo Bu arac kendi bilgisayarinizdaki kurulum dosyalarini VDS'inize kopyalayacak ve VDS icinde otomatik kuracaktir.
 echo.
 
@@ -32,7 +32,7 @@ del vpn-deploy.tar.gz
 
 echo.
 echo [3/4] Dosyalar yuklendi. Simdi VDS uzerinde kurulum baslatiliyor...
-ssh -p %VPS_PORT% -t %VPS_USER%@%VPS_IP% "mkdir -p ~/nexusvpn-server && tar -xzf ~/vpn-deploy.tar.gz -C ~/nexusvpn-server && rm ~/vpn-deploy.tar.gz && cd ~/nexusvpn-server && chmod +x setup.sh && sudo ./setup.sh --auto"
+ssh -p %VPS_PORT% -t %VPS_USER%@%VPS_IP% "mkdir -p ~/xantum-server && tar -xzf ~/vpn-deploy.tar.gz -C ~/xantum-server && rm ~/vpn-deploy.tar.gz && cd ~/xantum-server && chmod +x setup.sh && sudo ./setup.sh --auto"
 
 echo.
 echo [4/4] Uzaktan kurulum tamamlandi veya sonlandirildi.

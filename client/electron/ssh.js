@@ -13,7 +13,7 @@ async function setupServerViaSSH({ host, username, password }) {
     })
 
     // 2. Setup scriptini indir ve çalıştır
-    const setupScriptUrl = 'https://raw.githubusercontent.com/eren/nexusvpn/main/server/setup.sh' // Varsayımsal URL, daha sonra GitHub linkiyle değiştirilmeli
+    const setupScriptUrl = 'https://raw.githubusercontent.com/eren/xantum/main/server/setup.sh' // Varsayımsal URL, daha sonra GitHub linkiyle değiştirilmeli
     // Şu anlık scripti bilgisayardan okuyup sunucuya yükleyeceğiz.
     
     // Geliştirme aşamasında lokalden okumak için (Production'da github'dan curl ile indirilmeli)

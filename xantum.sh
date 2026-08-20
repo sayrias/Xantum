@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-#  NexusVPN — Ana Kontrol Paneli (Linux)
+#  Xantum — Ana Kontrol Paneli (Linux)
 # ============================================================
 
 CYAN='\033[0;36m'
@@ -13,7 +13,7 @@ NC='\033[0m'
 clear
 echo -e "${CYAN}"
 echo "  ╔══════════════════════════════════════════════════════╗"
-echo "  ║    NexusVPN Merkezi Kontrol Paneli (Linux)           ║"
+echo "  ║    Xantum Merkezi Kontrol Paneli (Linux)           ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 echo "  [1] Sunucu Kurulumu veya Güncellemesi (VDS Deploy)"

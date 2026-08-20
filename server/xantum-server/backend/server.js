@@ -39,7 +39,7 @@ app.post('/register', (req, res) => {
   // Güvenli isim oluştur
   const peerName = 'peer_' + Math.random().toString(36).substring(2, 9);
   
-  exec(`sudo /usr/local/bin/nexusvpn/add-peer-api.sh "${peerName}" "${publicKey}"`, (err, stdout, stderr) => {
+  exec(`sudo /usr/local/bin/xantum/add-peer-api.sh "${peerName}" "${publicKey}"`, (err, stdout, stderr) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ error: 'VPN kaydı yapılamadı.' });
@@ -127,5 +127,5 @@ io.on('connection', (socket) => {
 
 const PORT = 51821;
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`NexusVPN API ve Sinyal Sunucusu ${PORT} portunda çalışıyor.`);
+  console.log(`Xantum API ve Sinyal Sunucusu ${PORT} portunda çalışıyor.`);
 });

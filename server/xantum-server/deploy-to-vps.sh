@@ -1,8 +1,8 @@
 #!/bin/bash
-# NexusVPN Uzaktan Kurulum (Deploy) Scripti (Linux / macOS için)
+# Xantum Uzaktan Kurulum (Deploy) Scripti (Linux / macOS için)
 # Bu script kendi bilgisayarınızda çalıştırılır ve kurulum dosyalarını VDS'e atıp orada çalıştırır.
 
-echo -e "\033[0;36m[NexusVPN]\033[0m Uzaktan VDS Kurulum Aracına Hoş Geldiniz!"
+echo -e "\033[0;36m[Xantum]\033[0m Uzaktan VDS Kurulum Aracına Hoş Geldiniz!"
 echo "Bu araç kendi bilgisayarınızdaki kurulum dosyalarını VDS'inize kopyalayacak ve VDS içinde otomatik kuracaktır."
 echo "Lütfen VDS bilgilerinizi girin:"
 
@@ -32,7 +32,7 @@ fi
 rm -f vpn-deploy.tar.gz
 
 echo -e "\033[1;33m[3/4]\033[0m Dosyalar yüklendi. Şimdi VDS üzerinde kurulum başlatılıyor..."
-ssh -p $VPS_PORT -t ${VPS_USER}@${VPS_IP} "mkdir -p ~/nexusvpn-server && tar -xzf ~/vpn-deploy.tar.gz -C ~/nexusvpn-server && rm ~/vpn-deploy.tar.gz && cd ~/nexusvpn-server && chmod +x setup.sh && sudo ./setup.sh --auto"
+ssh -p $VPS_PORT -t ${VPS_USER}@${VPS_IP} "mkdir -p ~/xantum-server && tar -xzf ~/vpn-deploy.tar.gz -C ~/xantum-server && rm ~/vpn-deploy.tar.gz && cd ~/xantum-server && chmod +x setup.sh && sudo ./setup.sh --auto"
 
 echo -e "\033[0;32m[4/4]\033[0m Uzaktan kurulum tamamlandı veya sonlandırıldı."
 echo "Lütfen VDS ekranındaki Token ve IP bilgilerini not almayı unutmayın!"

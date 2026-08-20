@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-#  NexusVPN — VDS Sunucu Kurulum ve Güncelleme Scripti
+#  Xantum — VDS Sunucu Kurulum ve Güncelleme Scripti
 #  Ubuntu 20.04 / 22.04 / 24.04 destekli
 # ============================================================
 
@@ -15,7 +15,7 @@ NC='\033[0m'
 
 echo -e "${CYAN}"
 echo "  ╔══════════════════════════════════════════════════════╗"
-echo "  ║    NexusVPN — VDS Kurulum Scripti                    ║"
+echo "  ║    Xantum — VDS Kurulum Scripti                    ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
@@ -43,14 +43,14 @@ export SSHPASS="$VPS_PASS"
 
 echo -e "${YELLOW}[1/3]${NC} Kurulum dosyaları paketleniyor..."
 cd "$(dirname "$0")/../server"
-tar --exclude="backend/node_modules" -czf /tmp/vpn-deploy.tar.gz nexusvpn-server/
+tar --exclude="backend/node_modules" -czf /tmp/vpn-deploy.tar.gz xantum-server/
 
 echo -e "${YELLOW}[2/3]${NC} Dosyalar VDS'e yükleniyor..."
 sshpass -e scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /tmp/vpn-deploy.tar.gz ${SSH_TARGET}:~/
 
 echo -e "${YELLOW}[3/3]${NC} VDS'de kurulum başlatılıyor... Lütfen bekleyin..."
 echo -e "${CYAN}------------------------------------------------------------${NC}"
-sshpass -e ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${SSH_TARGET} "mkdir -p ~/nexusvpn-server && tar -xzf ~/vpn-deploy.tar.gz -C ~/ && rm ~/vpn-deploy.tar.gz && cd ~/nexusvpn-server && chmod +x setup.sh && echo \"$VPS_PASS\" | sudo -S ./setup.sh --auto"
+sshpass -e ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${SSH_TARGET} "mkdir -p ~/xantum-server && tar -xzf ~/vpn-deploy.tar.gz -C ~/ && rm ~/vpn-deploy.tar.gz && cd ~/xantum-server && chmod +x setup.sh && echo \"$VPS_PASS\" | sudo -S ./setup.sh --auto"
 
 echo -e "${CYAN}------------------------------------------------------------${NC}"
 echo -e "  ${GREEN}Kurulum işlemi tamamlandı! Lütfen yukarıdaki Token ve IP bilgisini not alın.${NC}"

@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "=== NexusVPN Durum Raporu ==="
+echo "=== Xantum Durum Raporu ==="
 echo "Tarih: $(date)"
 echo ""
 echo "--- WireGuard Arayüzü ---"

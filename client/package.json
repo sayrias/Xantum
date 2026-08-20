@@ -1,8 +1,8 @@
 {
-  "name": "nexusvpn",
+  "name": "xantum",
   "version": "1.0.0",
-  "description": "NexusVPN — Kişisel WireGuard VPN Masaüstü Uygulaması",
-  "homepage": "https://nexusvpn.app",
+  "description": "Xantum — Kişisel WireGuard VPN Masaüstü Uygulaması",
+  "homepage": "https://xantum.app",
   "main": "electron/main.js",
   "scripts": {
     "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
@@ -35,9 +35,9 @@
     "wait-on": "^8.0.1"
   },
   "build": {
-    "appId": "com.nexusvpn.app",
-    "productName": "NexusVPN",
-    "copyright": "NexusVPN",
+    "appId": "com.xantum.app",
+    "productName": "Xantum",
+    "copyright": "Xantum",
     "directories": {
       "output": "dist-electron"
     },
@@ -56,20 +56,40 @@
     ],
     "linux": {
       "target": [
-        { "target": "AppImage", "arch": ["x64"] },
-        { "target": "deb",      "arch": ["x64"] }
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "category": "Network",
       "icon": "assets/icon.png",
-      "description": "NexusVPN — Kişisel WireGuard VPN Masaüstü Uygulaması",
-      "maintainer": "NexusVPN <support@nexusvpn.app>"
+      "description": "Xantum — Kişisel WireGuard VPN Masaüstü Uygulaması",
+      "maintainer": "Xantum <support@xantum.app>"
     },
     "deb": {
-      "depends": ["wireguard-tools", "libnotify4", "libxtst6", "libnss3"]
+      "depends": [
+        "wireguard-tools",
+        "libnotify4",
+        "libxtst6",
+        "libnss3"
+      ]
     },
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "assets/icon.ico",
       "signAndEditExecutable": false,
@@ -77,10 +97,11 @@
       "verifyUpdateCodeSignature": false
     },
     "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
+      "oneClick": true,
+      "perMachine": false,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false
     },
     "extraResources": []
   }

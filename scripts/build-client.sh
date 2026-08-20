@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-#  NexusVPN — İstemci Derleme Scripti v1.0
+#  Xantum — İstemci Derleme Scripti v1.0
 #  Wine/Docker otomatik kurulum destekli
 # ============================================================
 
@@ -21,7 +21,7 @@ echo "  ██║╚██╗██║██╔══╝   ██╔██╗ �
 echo "  ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║"
 echo "  ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝"
 echo -e "${NC}"
-echo -e "${BOLD}  NexusVPN İstemci Derleme Aracı v1.0${NC}"
+echo -e "${BOLD}  Xantum İstemci Derleme Aracı v1.0${NC}"
 echo "  ────────────────────────────────────────────"
 echo ""
 
@@ -252,7 +252,23 @@ build_linux() {
 
 build_windows_wine() {
     echo -e "      ${BOLD}Windows hedefi:${NC} NSIS Installer (.exe) — Wine ile"
+    # Wine ve NSIS, Türkçe karakterli yolları (ör. Masaüstü) bozmaktadır.
+    # ASCII karakterli güvenli bir dizine (home) hardlink kopyası alıp derlemeyi orada yapıyoruz.
+    local BUILD_LINK="$HOME/.xantum-build-tmp"
+    rm -rf "$BUILD_LINK"
+    cp -al "$(pwd)" "$BUILD_LINK" 2>/dev/null || rsync -a --exclude=node_modules --exclude=dist-electron "$(pwd)/" "$BUILD_LINK/"
+    
+    cd "$BUILD_LINK"
+    # Eğer hardlink yerine rsync kopyası kullanıldıysa npm install gerekebilir
+    [ ! -d "node_modules" ] && npm install --silent
     npm run build:win
+    cd - > /dev/null
+    
+    # Oluşan EXE ve paketleri gerçek dizine taşı
+    cp -r "$BUILD_LINK/dist-electron/"*.exe dist-electron/ 2>/dev/null || true
+    cp -r "$BUILD_LINK/dist-electron/"*-unpacked dist-electron/ 2>/dev/null || true
+    rm -rf "$BUILD_LINK"
+    
     echo -e "      ${GREEN}✓${NC} Windows derlemesi tamamlandı"
 }
 

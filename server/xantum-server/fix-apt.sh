@@ -1,5 +1,5 @@
 #!/bin/bash
-# NexusVPN — APT Düzeltme + Temiz Kurulum
+# Xantum — APT Düzeltme + Temiz Kurulum
 # "held broken packages" hatasını çözer
 
 echo "=== APT Temizleniyor ==="

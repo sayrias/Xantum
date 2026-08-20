@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-#  NexusVPN — Otomatik WireGuard Sunucu Kurulum Scripti
+#  Xantum — Otomatik WireGuard Sunucu Kurulum Scripti
 #  Otomatik kurulum ve optimizasyon
 # ============================================================
 
@@ -24,7 +24,7 @@ SERVER_PUBLIC_IP=$(curl -4 -s ifconfig.me)
 CLIENT_IP="10.0.0.2"
 IS_UPDATE=false
 
-log()  { echo -e "${CYAN}[NexusVPN]${NC} $1"; }
+log()  { echo -e "${CYAN}[Xantum]${NC} $1"; }
 ok()   { echo -e "${GREEN}[✓]${NC} $1"; }
 warn() { echo -e "${YELLOW}[!]${NC} $1"; }
 err()  { echo -e "${RED}[✗]${NC} $1"; exit 1; }
@@ -125,7 +125,7 @@ apply_kernel_tuning() {
     log "Kernel performans parametreleri ayarlanıyor..."
     
     cat > /etc/sysctl.d/99-wireguard.conf << 'SYSCTL'
-# NexusVPN — WireGuard Kernel Optimizasyonları
+# Xantum — WireGuard Kernel Optimizasyonları
 
 # IP Forwarding (zorunlu)
 net.ipv4.ip_forward = 1
@@ -203,7 +203,7 @@ create_server_config() {
     PRESHARED=$(cat /etc/wireguard/preshared.key)
     
     cat > /etc/wireguard/wg0.conf << EOF
-# NexusVPN WireGuard Sunucu — Oluşturuldu: $(date)
+# Xantum WireGuard Sunucu — Oluşturuldu: $(date)
 
 [Interface]
 Address = ${WG_SERVER_IP}/24
@@ -241,7 +241,7 @@ create_client_config() {
     mkdir -p /etc/wireguard/clients
     
     cat > /etc/wireguard/clients/client1.conf << EOF
-# NexusVPN İstemci Konfigürasyonu
+# Xantum İstemci Konfigürasyonu
 # Oluşturuldu: $(date)
 # Bu dosyayı Electron uygulamasına import et
 
@@ -279,7 +279,7 @@ configure_firewall() {
     
     # SSH bağlantısına izin ver (kendini kilitleme!)
     ufw allow 22/tcp comment 'SSH'
-    ufw allow 51821/tcp comment 'NexusVPN API'
+    ufw allow 51821/tcp comment 'Xantum API'
     ufw allow ${WG_PORT}/udp comment 'WireGuard VPN'
     
     ufw --force enable
@@ -310,12 +310,12 @@ start_service() {
 install_helper_scripts() {
     log "Yardımcı scriptler kuruluyor..."
     
-    mkdir -p /usr/local/bin/nexusvpn
+    mkdir -p /usr/local/bin/xantum
     
     # Durum scripti
-    cat > /usr/local/bin/nexusvpn/status.sh << 'SCRIPT'
+    cat > /usr/local/bin/xantum/status.sh << 'SCRIPT'
 #!/bin/bash
-echo "=== NexusVPN Durum Raporu ==="
+echo "=== Xantum Durum Raporu ==="
 echo "Tarih: $(date)"
 echo ""
 echo "--- WireGuard Arayüzü ---"
@@ -328,10 +328,10 @@ wg show wg0 peers | while read peer; do
     wg show wg0 transfer | grep "$peer" | awk '{print "  Transfer:", $2, "rx /", $3, "tx"}'
 done
 SCRIPT
-    chmod +x /usr/local/bin/nexusvpn/status.sh
+    chmod +x /usr/local/bin/xantum/status.sh
 
     # Ağ / LAN durumunu JSON olarak çeken API benzeri script (Hamachi özelliği için)
-    cat > /usr/local/bin/nexusvpn/get-network-status.sh << 'SCRIPT'
+    cat > /usr/local/bin/xantum/get-network-status.sh << 'SCRIPT'
 #!/bin/bash
 if [[ $EUID -ne 0 ]]; then echo '{"error": "Root gerekli"}'; exit 1; fi
 
@@ -356,10 +356,10 @@ done < <(wg show wg0 peers)
 PEERS_JSON="$PEERS_JSON]"
 echo "$PEERS_JSON"
 SCRIPT
-    chmod +x /usr/local/bin/nexusvpn/get-network-status.sh
+    chmod +x /usr/local/bin/xantum/get-network-status.sh
     
     # Yeni peer ekle scripti
-    cat > /usr/local/bin/nexusvpn/add-peer.sh << 'SCRIPT'
+    cat > /usr/local/bin/xantum/add-peer.sh << 'SCRIPT'
 #!/bin/bash
 if [[ $EUID -ne 0 ]]; then echo "Root gerekli"; exit 1; fi
 if [[ -z "$1" ]]; then echo "Kullanım: add-peer.sh <isim>"; exit 1; fi
@@ -404,11 +404,11 @@ echo "Yeni istemci eklendi: ${NAME} (${PEER_IP})"
 echo "Config: /etc/wireguard/clients/${NAME}.conf"
 qrencode -t ansiutf8 < /etc/wireguard/clients/${NAME}.conf
 SCRIPT
-    chmod +x /usr/local/bin/nexusvpn/add-peer.sh
+    chmod +x /usr/local/bin/xantum/add-peer.sh
     
     if [ -f "add-peer-api.sh" ]; then
-        cp add-peer-api.sh /usr/local/bin/nexusvpn/
-        chmod +x /usr/local/bin/nexusvpn/add-peer-api.sh
+        cp add-peer-api.sh /usr/local/bin/xantum/
+        chmod +x /usr/local/bin/xantum/add-peer-api.sh
     fi
     
     ok "Yardımcı scriptler kuruldu"
@@ -418,13 +418,13 @@ SCRIPT
 print_summary() {
     # Token'i (.env dosyasından VPN_PIN) alalım
     local API_TOKEN="123456"
-    if [ -f /opt/nexusvpn-backend/.env ]; then
-        API_TOKEN=$(grep VPN_PIN /opt/nexusvpn-backend/.env | cut -d '=' -f2)
+    if [ -f /opt/xantum-backend/.env ]; then
+        API_TOKEN=$(grep VPN_PIN /opt/xantum-backend/.env | cut -d '=' -f2)
     fi
 
     echo ""
     echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${GREEN}║          🎉 NexusVPN KURULUM TAMAMLANDI! 🎉                ║${NC}"
+    echo -e "${GREEN}║          🎉 Xantum KURULUM TAMAMLANDI! 🎉                ║${NC}"
     echo -e "${GREEN}╚════════════════════════════════════════════════════════════╝${NC}"
     echo ""
     echo -e "${BOLD}LÜTFEN AŞAĞIDAKİ 2 BİLGİYİ KOPYALAYIN (Masaüstü uygulaması için gereklidir):${NC}"
@@ -437,8 +437,8 @@ print_summary() {
     echo "  Dosya: /etc/wireguard/clients/client1.conf"
     echo ""
     echo -e "${BOLD}Yararlı Komutlar:${NC}"
-    echo "  Durum       : /usr/local/bin/nexusvpn/status.sh"
-    echo "  Yeni istemci: sudo /usr/local/bin/nexusvpn/add-peer.sh <isim>"
+    echo "  Durum       : /usr/local/bin/xantum/status.sh"
+    echo "  Yeni istemci: sudo /usr/local/bin/xantum/add-peer.sh <isim>"
     echo "  WG durumu   : wg show"
     echo "  Servis      : systemctl status wg-quick@wg0"
     echo ""
@@ -454,11 +454,11 @@ install_backend_api() {
     fi
     
     log "Backend kodları güncelleniyor..."
-    mkdir -p /opt/nexusvpn-backend
+    mkdir -p /opt/xantum-backend
     
     if [ -d "backend" ]; then
-        cp -r backend/* /opt/nexusvpn-backend/
-        cd /opt/nexusvpn-backend
+        cp -r backend/* /opt/xantum-backend/
+        cd /opt/xantum-backend
         
         # API Pin (Invite Token) oluştur
         if [ ! -f .env ]; then
@@ -468,7 +468,7 @@ install_backend_api() {
         fi
         
         npm install
-        pm2 restart nexusvpn-backend || pm2 start server.js --name "nexusvpn-backend"
+        pm2 restart xantum-backend || pm2 start server.js --name "xantum-backend"
         pm2 save
         ok "Backend API güncellendi ve başlatıldı."
     else

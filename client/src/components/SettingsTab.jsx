@@ -88,7 +88,7 @@ export default function SettingsTab() {
   // Ayarları yükle
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('nexus_settings')
+      const saved = localStorage.getItem('xantum_settings')
       if (saved) {
         const parsed = JSON.parse(saved)
         setSettings(prev => ({ ...prev, ...parsed }))
@@ -99,7 +99,7 @@ export default function SettingsTab() {
 
   // Ayarları kaydet
   useEffect(() => {
-    localStorage.setItem('nexus_settings', JSON.stringify(settings))
+    localStorage.setItem('xantum_settings', JSON.stringify(settings))
   }, [settings])
 
   // Cihazları getir
@@ -199,7 +199,7 @@ export default function SettingsTab() {
   const toggleSetting = (key) => {
     setSettings(prev => {
       const next = { ...prev, [key]: !prev[key] };
-      window.dispatchEvent(new CustomEvent('nexus_settings_update', { detail: next }));
+      window.dispatchEvent(new CustomEvent('xantum_settings_update', { detail: next }));
       return next;
     })
   }
@@ -207,7 +207,7 @@ export default function SettingsTab() {
   const updateDevice = (key, val) => {
     setSettings(prev => {
       const next = { ...prev, [key]: val };
-      window.dispatchEvent(new CustomEvent('nexus_settings_update', { detail: next }));
+      window.dispatchEvent(new CustomEvent('xantum_settings_update', { detail: next }));
       return next;
     })
   }
@@ -216,7 +216,7 @@ export default function SettingsTab() {
     updateDevice('nickname', tempName)
     setNameSaved(true)
     setTimeout(() => setNameSaved(false), 2000)
-    window.dispatchEvent(new Event('nexus_profile_update'))
+    window.dispatchEvent(new Event('xantum_profile_update'))
   }
 
   return (
