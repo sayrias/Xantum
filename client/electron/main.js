@@ -1,9 +1,13 @@
 const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, dialog, shell } = require('electron')
 const path = require('path')
-const { exec, spawn } = require('child_process')
 const fs = require('fs')
-const os = require('os')
-const { setupServerViaSSH } = require('./ssh')
+const XTPClient = require('./xtp-client')
+const { connectionConfig } = require('./connection-config')
+const { isTrustedFrame } = require('./ipc-security')
+const { parseConfig, readConfig, writeConfig } = require('./config-store')
+const { loadServerProfile } = require('./server-profile')
+let activeConnectionConfig = null
+let protectionReady = Promise.resolve()
 
 // ---- Geliştirme mi production mu? ----
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
@@ -91,12 +95,25 @@ if (process.platform === 'linux') {
 // ---- Global değişkenler ----
 let mainWindow = null
 let tray = null
-let vpnStatusInterval = null
-let statsInterval = null
 
-// ---- VPN Durum Yönetimi ----
-let currentVpnInterface = null
+// ---- VPN Durum Yönetimi (XTP tabanlı) ----
 let vpnConnectedTime = null
+const xtpClient = new XTPClient()
+
+xtpClient.onProtectionChange = status => {
+  try { mainWindow?.webContents.send('vpn-protection-changed', status) } catch {}
+  app.trayManager?.updateTrayMenu(xtpClient.connected)
+}
+
+// Bağlantı kop → UI'ya bildir
+xtpClient.onDisconnect = () => {
+  vpnConnectedTime = null
+  try {
+    const wins = BrowserWindow.getAllWindows()
+    if (wins.length > 0) wins[0].webContents.send('vpn-disconnected')
+  } catch {}
+  if (app.trayManager) app.trayManager.updateTrayMenu(false)
+}
 
 // ============================================================
 // PENCERE OLUŞTURMA
@@ -115,10 +132,17 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,    // GÜVENLİK: Zorunlu
       nodeIntegration: false,    // GÜVENLİK: Devre dışı
-      sandbox: false,
-      webSecurity: false,        // Yerel dosya yükleme için
+      sandbox: true,
+      webSecurity: true,        // Yerel dosya yükleme için
     },
-    icon: path.join(__dirname, '../assets/icon.png'),
+    icon: (() => {
+      const candidates = ['icon.png','logo.png','tray-icon.png','logo_square.png']
+      for (const f of candidates) {
+        const p = path.join(__dirname, '../assets', f)
+        if (fs.existsSync(p)) return p
+      }
+      return undefined  // Electron varsayılan ikon kullanır
+    })(),
     titleBarStyle: 'hidden',
     show: false,  // Hazır olunca göster
   })
@@ -139,14 +163,24 @@ function createWindow() {
     }
   }
 
-  // Pencere hazır olunca göster (beyaz flash önlemi)
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show()
-  })
+  // Some compositors do not paint a hidden window, so ready-to-show alone
+  // can leave a fully loaded app invisible. Show once on either signal.
+  const initialWindow = mainWindow
+  let initiallyShown = false
+  const showInitialWindow = () => {
+    if (initiallyShown || initialWindow.isDestroyed()) return
+    initiallyShown = true
+    initialWindow.show()
+  }
+  mainWindow.once('ready-to-show', showInitialWindow)
+  mainWindow.webContents.once('did-finish-load', showInitialWindow)
 
-  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
-    appLog('info', `[RENDERER] ${message} (line ${line} in ${sourceId})`);
-  });
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  mainWindow.webContents.on('will-navigate', event => event.preventDefault())
+
+  mainWindow.webContents.on('console-message', ({ level, message, lineNumber, sourceId }) => {
+    appLog(level === 'warning' ? 'warn' : level === 'error' ? 'error' : 'info', `[RENDERER] ${message} (line ${lineNumber} in ${sourceId})`)
+  })
 
   // Kapatma davranışı — tray'e küçült
   mainWindow.on('close', (event) => {
@@ -163,31 +197,38 @@ function createWindow() {
 // SYSTEM TRAY
 // ============================================================
 function createTray() {
-  const iconPath = path.join(__dirname, '../assets/tray-icon.png')
-  const icon = fs.existsSync(iconPath) 
-    ? nativeImage.createFromPath(iconPath)
-    : nativeImage.createEmpty()
-  
-  tray = new Tray(icon.resize({ width: 16, height: 16 }))
-  
-  const updateTrayMenu = (connected = false) => {
+  /* Mevcut ikon dosyasını bul (icon.png yoksa alternatifler dene) */
+  const iconCandidates = process.platform === 'win32'
+    ? ['icon.ico', 'logo.png']
+    : ['tray-icon.png', 'icon.png', 'logo.png', 'logo_square.png']
+  let iconPath = null
+  for (const f of iconCandidates) {
+    const p = path.join(__dirname, '../assets', f)
+    if (fs.existsSync(p)) { iconPath = p; break }
+  }
+
+  try {
+    tray = iconPath ? new Tray(iconPath) : null
+  } catch (e) {
+    appLog('warn', 'Tray ikon yüklenemedi: ' + e.message)
+    tray = null
+  }
+
+  if (!tray) return { updateTrayMenu: () => {} }
+
+  const updateTrayMenu = (connected = false, locationLabel = '') => {
+    const connLabel = connected
+      ? `Bağlı${locationLabel ? ' — ' + locationLabel : ''}`
+      : xtpClient.protectionState?.active ? 'Trafik koruması: internet kilitli' : 'Bağlantı kesildi'
+
     const contextMenu = Menu.buildFromTemplate([
-      {
-        label: 'Xantum',
-        enabled: false,
-      },
+      { label: 'Xantum', enabled: false },
       { type: 'separator' },
-      {
-        label: connected ? '🟢 Bağlı — Almanya 🇩🇪' : '🔴 Bağlantı Kesildi',
-        enabled: false,
-      },
+      { label: connLabel, enabled: false },
       { type: 'separator' },
       {
         label: 'Aç',
-        click: () => {
-          mainWindow.show()
-          mainWindow.focus()
-        }
+        click: () => { mainWindow.show(); mainWindow.focus() }
       },
       {
         label: connected ? 'Bağlantıyı Kes' : 'Bağlan',
@@ -196,161 +237,93 @@ function createTray() {
           mainWindow.webContents.send('tray-toggle-vpn')
         }
       },
+      {
+        label: 'Korumayı kaldır ve interneti geri aç',
+        visible: Boolean(xtpClient.protectionState?.active && !connected),
+        click: async () => {
+          try { await xtpClient.releaseProtection(); protectionReady = Promise.resolve(xtpClient.protectionState) }
+          catch (error) { dialog.showErrorBox('Koruma kaldırılamadı', error.message) }
+        }
+      },
       { type: 'separator' },
       {
         label: 'Çıkış',
-        click: () => {
-          app.isQuitting = true
-          app.quit()
-        }
+        click: () => { app.isQuitting = true; app.quit() }
       }
     ])
-    
+
     tray.setContextMenu(contextMenu)
-    tray.setToolTip(connected ? 'Xantum — Bağlı 🇩🇪' : 'Xantum — Bağlantı Kesildi')
+    tray.setToolTip(connected ? 'Xantum — Bağlı' : xtpClient.protectionState?.active ? 'Xantum — İnternet koruma altında kilitli' : 'Xantum — Bağlantı kesildi')
   }
-  
+
   updateTrayMenu(false)
-  
+
   tray.on('double-click', () => {
     mainWindow.show()
     mainWindow.focus()
   })
-  
+
   return { updateTrayMenu }
 }
 
 // ============================================================
-// VPN KOMUTLARI — GÜVENLİ YÜRÜTME
+// XTP VPN — GÜVENLİ YÜRÜTME
 // ============================================================
-
-/**
- * Sistem komutu çalıştır (whitelist tabanlı — güvenli)
- */
-function runCommand(cmd) {
-  return new Promise((resolve, reject) => {
-    exec(cmd, { timeout: 30000 }, (error, stdout, stderr) => {
-      if (error) {
-        reject({ error: error.message, stderr })
-      } else {
-        resolve({ stdout, stderr })
-      }
-    })
-  })
-}
-
-/**
- * WireGuard config dosyasından interface adını çıkar
- */
-function getInterfaceName(configPath) {
-  const basename = path.basename(configPath, '.conf')
-  return basename
-}
-
-/**
- * VPN'e bağlan — pkexec ile root yetkisi iste
- */
-async function connectVpn(configPath) {
-  if (!fs.existsSync(configPath)) {
-    throw new Error(`Config dosyası bulunamadı: ${configPath}`)
-  }
-  
-  const interfaceName = getInterfaceName(configPath)
-  currentVpnInterface = interfaceName
-  
-  // Config dosyasını WireGuard dizinine kopyala
-  const wgConfigPath = `/etc/wireguard/${interfaceName}.conf`
-  
-  // Ayrı sudo komutlarıyla çalıştır (sudoers NOPASSWD için daha güvenilir)
-  await runCommand(`sudo cp '${configPath}' '${wgConfigPath}'`)
-  await runCommand(`sudo chmod 600 '${wgConfigPath}'`)
-  await runCommand(`sudo /usr/bin/wg-quick up '${interfaceName}'`)
-  vpnConnectedTime = Date.now()
-  return interfaceName
-}
-
-/**
- * VPN bağlantısını kes
- */
-async function disconnectVpn(interfaceName) {
-  if (!interfaceName) throw new Error('Interface adı belirtilmedi')
-  
-  await runCommand(`sudo /usr/bin/wg-quick down '${interfaceName}'`)
-  currentVpnInterface = null
-  vpnConnectedTime = null
-}
-
-/**
- * WireGuard arayüzü aktif mi?
- */
-async function checkVpnStatus() {
-  try {
-    const { stdout } = await runCommand('wg show interfaces')
-    const interfaces = stdout.trim().split('\n').filter(i => i.length > 0)
-    return {
-      connected: interfaces.length > 0,
-      interface: interfaces[0] || null,
-      interfaces,
-    }
-  } catch {
-    return { connected: false, interface: null, interfaces: [] }
-  }
-}
-
-/**
- * WireGuard transfer istatistiklerini al
- */
-async function getWgStats(interfaceName) {
-  try {
-    if (!interfaceName) return null
-    
-    const { stdout } = await runCommand(`wg show ${interfaceName} transfer`)
-    const lines = stdout.trim().split('\n')
-    
-    let totalRx = 0
-    let totalTx = 0
-    
-    for (const line of lines) {
-      const parts = line.trim().split(/\s+/)
-      if (parts.length >= 3) {
-        totalRx += parseInt(parts[1]) || 0
-        totalTx += parseInt(parts[2]) || 0
-      }
-    }
-    
-    return { rx: totalRx, tx: totalTx }
-  } catch {
-    return null
-  }
-}
 
 /**
  * Mevcut public IP adresini al
  */
-async function getPublicIp() {
-  try {
-    const { stdout } = await runCommand('curl -s --max-time 5 https://api.ipify.org')
-    return stdout.trim()
-  } catch {
+/* HTTPS-only IP discovery; location fields remain optional. */
+async function getIpInfo() {
+  const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args))
+
+  /* Query only HTTPS endpoints. Never leak the lookup over cleartext HTTP. */
+  const sources = [
+    'https://api.ipify.org',
+    'https://api4.my-ip.io/v2/ip.txt',
+    'https://icanhazip.com',
+  ]
+  for (const url of sources) {
     try {
-      const { stdout } = await runCommand('curl -s --max-time 5 https://ifconfig.me')
-      return stdout.trim()
-    } catch {
-      return null
-    }
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
+      if (res.ok) {
+        const text = (await res.text()).trim()
+        if (/^(\d{1,3}\.){3}\d{1,3}$/.test(text))
+          return { ip: text, country: null, city: null, isp: null, flag: '' }
+      }
+    } catch {}
   }
+  return null
+}
+
+/* Eski adı sağlayan kısa dönüsçü̈: sadece IP metni */
+async function getPublicIp() {
+  const info = await getIpInfo()
+  return info?.ip || null
+}
+
+
+const trustedSender = event => isTrustedFrame(event, mainWindow?.webContents, {
+  isDev, indexPath: path.join(__dirname, '../dist/index.html'),
+})
+function handle(channel, callback) {
+  ipcMain.handle(channel, (event, ...args) => {
+    if (!trustedSender(event)) throw new Error('Yetkisiz uygulama isteği.')
+    return callback(event, ...args)
+  })
+}
+function listen(channel, callback) {
+  ipcMain.on(channel, (event, ...args) => { if (trustedSender(event)) callback(event, ...args) })
 }
 
 // ============================================================
 // IPC HANDLERS — UI ile iletişim
 // ============================================================
 
-ipcMain.handle('setup-server-ssh', async (event, credentials) => {
-  return await setupServerViaSSH(credentials)
-})
+handle('setup-server-ssh', async () => ({ success: false, error: 'Sunucu kurulumu için docs/KURULUM.md içindeki TLS ve SSH adımlarını kullanın.' }))
 
-ipcMain.handle('get-network-status', async (event) => {
-  if (!currentVpnInterface) return { error: "VPN bağlı değil" }
+handle('get-network-status', async (event) => {
+  if (!xtpClient.connected) return { error: "VPN bağlı değil" }
   try {
     return []
   } catch (e) {
@@ -358,83 +331,115 @@ ipcMain.handle('get-network-status', async (event) => {
   }
 })
 
-// === YENİ: OTOMATİK KAYIT (API ÜZERİNDEN) ===
-ipcMain.handle('auto-register-vpn', async () => {
+function readServerProfile() {
+  return loadServerProfile({ userData: app.getPath('userData'), isPackaged: app.isPackaged,
+    resourcesPath: process.resourcesPath, developmentProfile: process.env.XANTUM_CONNECTION_PROFILE,
+    legacyFile: path.join(__dirname, '..', 'config.json') })
+}
+function readServerConfig() { return readServerProfile().config }
+handle('server-config:load', () => {
   try {
-    const configPath = path.join(app.getPath('userData'), 'Xantum.conf')
-    // Geliştirme/test aşamasındaki hatalı configleri temizlemek için her seferinde yeni alıyoruz
-    if (fs.existsSync(configPath)) {
-      try { fs.unlinkSync(configPath) } catch (e) {}
+    const { config, source, label } = readServerProfile()
+    return { serverIp: config.serverIp, configured: true, source, profileLabel: label }
+  }
+  catch { return { configured: false } }
+})
+handle('server-config:save', async (_, data) => {
+  try {
+    await protectionReady
+    if (xtpClient.protectionState?.active || xtpClient.protectionState?.state === 'unknown') throw new Error('Sunucuyu değiştirmeden önce trafik korumasını kaldırın.')
+    if (xtpClient.connected || xtpClient.connecting) throw new Error('Sunucuyu değiştirmeden önce VPN bağlantısını kesin.')
+    let existing
+    try { existing = readServerConfig() } catch {}
+    if (!data || typeof data !== 'object') throw new Error('Geçersiz sunucu ayarları.')
+    let config = connectionConfig({ serverIp: data.serverIp, inviteToken: data.inviteToken || existing?.pin })
+    if (!data.inviteToken && existing?.serverIp !== config.serverIp) throw new Error('Yeni sunucu için katılım anahtarını girin.')
+    if (existing?.serverIp === config.serverIp) config = connectionConfig({ ...existing, pin: config.pin })
+    writeConfig(path.join(app.getPath('userData'), 'server.json'), { ...config, profileOrigin: 'manual' })
+    activeConnectionConfig = null
+    return { success: true }
+  } catch (error) { return { success: false, error: error.message } }
+})
+
+// === OTOMATİK KAYIT & BAĞLANTI (XTP Protokolü) ===
+handle('auto-register-vpn', async () => {
+  try {
+    await protectionReady
+    const appConfig = readServerConfig()
+    // A crash-retained guard blocks ordinary DNS. Reuse only the same server's
+    // previously registered config so the tunnel can reconnect through its exception.
+    if (xtpClient.protectionState?.active) {
+      const cachedPath = path.join(app.getPath('userData'), 'xtp-config.json')
+      const cached = readConfig(cachedPath)
+      const normalized = connectionConfig(cached)
+      if (cached.protocol === 'xtp' && ['serverIp', 'pin', 'apiUrl', 'xtpUrl'].every(key => normalized[key] === appConfig[key])) {
+        return { success: true, configPath: cachedPath }
+      }
+      throw new Error('Koruma açıkken sunucu değiştirilemez. Önce internet erişimini geri açın.')
     }
 
-    // 1. config.json oku
-    const appConfigPath = path.join(__dirname, '..', 'config.json')
-    if (!fs.existsSync(appConfigPath)) {
-      throw new Error('Gömülü config.json bulunamadı. Lütfen kurulum dosyanızı kontrol edin.')
-    }
-    const appConfig = JSON.parse(fs.readFileSync(appConfigPath, 'utf8'))
-
-    // 2. wg genkey
-    const { stdout: privateKey } = await runCommand('wg genkey')
-    const { stdout: publicKey } = await runCommand(`echo "${privateKey.trim()}" | wg pubkey`)
-
-    // 3. API'ye istek at
-    const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
-    const res = await fetch(`http://${appConfig.serverIp}:${appConfig.apiPort}/register`, {
+    // 2. Sunucuya kayıt isteği at — XTP bağlantı bilgilerini al
+    const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args))
+    const res = await fetch(`${appConfig.apiUrl}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        pin: appConfig.inviteToken,
-        publicKey: publicKey.trim()
-      })
+      body: JSON.stringify({ pin: appConfig.pin }),
+      signal: AbortSignal.timeout(10000), redirect: 'error', size: 65536
     })
 
     if (!res.ok) {
       const errData = await res.json()
-      appLog('error', `Sunucu kayit hatasi: ${errData.error}`)
+      appLog('error', `Sunucu kayıt hatası: ${errData.error}`)
       throw new Error(errData.error || 'Sunucu kayıt hatası')
     }
 
-    const { config } = await res.json()
-    appLog('info', 'Sunucuya başarıyla kayıt olundu. Config alındı.')
+    const { config: responseConfig } = await res.json()
+    const config = { ...responseConfig, ...appConfig }
+    if (config.protocol !== 'xtp') {
+      throw new Error('Sunucu XTP protokolünü desteklemiyor. Lütfen sunucuyu güncelleyin.')
+    }
 
-    // 4. Config dosyasını oluştur
-    const confContent = `[Interface]
-Address = ${config.address}
-PrivateKey = ${privateKey.trim()}
-DNS = ${config.dns}
-MTU = ${config.mtu}
+    appLog('info', 'Sunucuya başarıyla kayıt olundu. XTP bağlantısı hazır.')
 
-[Peer]
-PublicKey = ${config.serverPublicKey}
-PresharedKey = ${config.presharedKey}
-Endpoint = ${config.endpoint}
-AllowedIPs = ${config.allowedIps}
-PersistentKeepalive = 25
-`
-    fs.writeFileSync(configPath, confContent)
-    return { success: true, configPath }
+    // 3. XTP config dosyasına kaydet
+    const xtpConfigPath = path.join(app.getPath('userData'), 'xtp-config.json')
+    writeConfig(xtpConfigPath, config)
+
+    return { success: true, configPath: xtpConfigPath }
   } catch (e) {
     appLog('error', 'Auto-register başarısız: ' + (e.message || String(e)))
     return { success: false, error: e.message || String(e) }
   }
 })
 
-ipcMain.handle('vpn:connect', async (event, configPath) => {
+handle('vpn:connect', async (event, configPath) => {
   try {
-    const interfaceName = await connectVpn(configPath)
+    await protectionReady
+    // configPath artık xtp-config.json yolu veya null (otomatik okur)
+    const xtpConfigPath = configPath || path.join(app.getPath('userData'), 'xtp-config.json')
+    if (!fs.existsSync(xtpConfigPath)) {
+      throw new Error('XTP config bulunamadı. Lütfen önce uygulamayı kurun (Bağlan butonuna tekrar basın).')
+    }
+    const xtpConfig = readConfig(xtpConfigPath)
+
+    const config = connectionConfig(xtpConfig)
+    await xtpClient.connect({ serverHost: config.serverIp, url: config.xtpUrl, pin: config.pin, fullTunnel: true, controlPorts: [Number(new URL(config.apiUrl).port || 443)] })
+    activeConnectionConfig = { ...config, iceServers: xtpConfig.iceServers || [] }
+
+    vpnConnectedTime = Date.now()
     const trayManager = app.trayManager
     if (trayManager) trayManager.updateTrayMenu(true)
-    return { success: true, interface: interfaceName }
+    return { success: true, interface: 'xtp0', ip: xtpClient.assignedIp }
   } catch (error) {
+    appLog('error', 'VPN bağlantı hatası: ' + error.message)
     return { success: false, error: error.message || String(error) }
   }
 })
 
-ipcMain.handle('vpn:disconnect', async (event, interfaceName) => {
+handle('vpn:disconnect', async () => {
   try {
-    const iface = interfaceName || currentVpnInterface
-    await disconnectVpn(iface)
+    await xtpClient.disconnect()
+    vpnConnectedTime = null
     const trayManager = app.trayManager
     if (trayManager) trayManager.updateTrayMenu(false)
     return { success: true }
@@ -443,39 +448,93 @@ ipcMain.handle('vpn:disconnect', async (event, interfaceName) => {
   }
 })
 
-ipcMain.handle('vpn:status', async () => {
-  try {
-    return await checkVpnStatus()
-  } catch (error) {
-    return { connected: false, error: error.message }
+handle('chat:connection', () => {
+  if (!xtpClient.connected || !activeConnectionConfig) return null
+  return { url: activeConnectionConfig.apiUrl, pin: activeConnectionConfig.pin, iceServers: activeConnectionConfig.iceServers }
+})
+
+handle('vpn:status', async () => {
+  return {
+    connected:  xtpClient.connected,
+    connecting: xtpClient.connecting,
+    protection: xtpClient.protectionState,
+    interface:  xtpClient.connected ? 'xtp0' : null,
+    ip:         xtpClient.assignedIp,
+    interfaces: xtpClient.connected ? ['xtp0'] : [],
   }
 })
 
-ipcMain.handle('vpn:stats', async (event, interfaceName) => {
+handle('vpn:protection:check', async () => {
+  protectionReady = xtpClient.probeProtection({ verify: true })
+  return protectionReady
+})
+handle('vpn:helpers:install', async () => {
   try {
-    const iface = interfaceName || currentVpnInterface
-    const stats = await getWgStats(iface)
-    const uptime = vpnConnectedTime ? Date.now() - vpnConnectedTime : 0
-    return { stats, uptime }
-  } catch {
-    return { stats: null, uptime: 0 }
+    if (xtpClient.connected || xtpClient.connecting) throw new Error('Koruma kurulumundan önce VPN bağlantısını kesin.')
+    const protection = await xtpClient.installHelpers()
+    protectionReady = Promise.resolve(protection)
+    return { success: true, protection }
+  } catch (error) { return { success: false, error: error.message, protection: xtpClient.protectionState } }
+})
+handle('vpn:protection:release', async () => {
+  try {
+    await xtpClient.releaseProtection()
+    protectionReady = Promise.resolve(xtpClient.protectionState)
+    return { success: true, protection: xtpClient.protectionState }
   }
+  catch (error) { return { success: false, error: error.message, protection: xtpClient.protectionState } }
 })
 
-ipcMain.handle('vpn:get-public-ip', async () => {
+handle('vpn:stats', async () => {
+  // Counts plaintext IP packet bytes; excludes TLS framing.
+  const uptime = vpnConnectedTime ? Date.now() - vpnConnectedTime : 0
+  return { stats: { rx: xtpClient.rxBytes, tx: xtpClient.txBytes }, uptime }
+})
+
+handle('vpn:get-public-ip', async () => {
   return await getPublicIp()
 })
 
-ipcMain.handle('vpn:get-connected-time', () => {
+/* Tam coğrafi bilgi: IP + ülke + şehir + ISP + bayrak */
+handle('vpn:get-ip-info', async () => {
+  return await getIpInfo()
+})
+
+
+handle('vpn:get-connected-time', () => {
   return vpnConnectedTime
 })
 
+// Ayarlar kaydet/yükle (fullTunnel gibi electron-seviyesi ayarlar için)
+handle('settings:save', (event, data) => {
+  try {
+    const settingsPath = path.join(app.getPath('userData'), 'settings.json')
+    let existing = {}
+    if (fs.existsSync(settingsPath)) existing = readConfig(settingsPath)
+    const merged = { ...existing, fullTunnel: true }
+    writeConfig(settingsPath, merged)
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
+})
+
+handle('settings:load', () => {
+  try {
+    const settingsPath = path.join(app.getPath('userData'), 'settings.json')
+    if (fs.existsSync(settingsPath)) return readConfig(settingsPath)
+    return {}
+  } catch {
+    return {}
+  }
+})
+
 // Config dosyası seçme
-ipcMain.handle('dialog:open-config', async () => {
+handle('dialog:open-config', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
-    title: 'WireGuard Config Dosyası Seç',
+    title: 'XTP Bağlantı Dosyası Seç',
     filters: [
-      { name: 'WireGuard Config', extensions: ['conf'] },
+      { name: 'XTP JSON', extensions: ['json'] },
       { name: 'Tüm Dosyalar', extensions: ['*'] }
     ],
     properties: ['openFile']
@@ -483,19 +542,22 @@ ipcMain.handle('dialog:open-config', async () => {
   
   if (!result.canceled && result.filePaths.length > 0) {
     const configPath = result.filePaths[0]
-    const content = fs.readFileSync(configPath, 'utf-8')
+    const content = JSON.stringify(readConfig(configPath), null, 2)
+    connectionConfig(parseConfig(content))
     return { path: configPath, content }
   }
   return null
 })
 
 // Config dosyasını belirli dizine kaydet
-ipcMain.handle('config:save', async (event, { name, content }) => {
+handle('config:save', async (event, { name, content }) => {
   try {
     const configDir = path.join(app.getPath('userData'), 'configs')
     fs.mkdirSync(configDir, { recursive: true })
-    const filePath = path.join(configDir, `${name}.conf`)
-    fs.writeFileSync(filePath, content, { mode: 0o600 })
+    if (!/^[a-zA-Z0-9_-]{1,64}$/.test(name)) throw new Error('Geçersiz dosya adı.')
+    connectionConfig(parseConfig(content))
+    const filePath = path.join(configDir, `${name}.json`)
+    writeConfig(filePath, parseConfig(content))
     return { success: true, path: filePath }
   } catch (error) {
     return { success: false, error: error.message }
@@ -503,16 +565,16 @@ ipcMain.handle('config:save', async (event, { name, content }) => {
 })
 
 // Kayıtlı config'leri listele
-ipcMain.handle('config:list', async () => {
+handle('config:list', async () => {
   try {
     const configDir = path.join(app.getPath('userData'), 'configs')
     if (!fs.existsSync(configDir)) return []
     const files = fs.readdirSync(configDir)
-      .filter(f => f.endsWith('.conf'))
+      .filter(f => f.endsWith('.json'))
       .map(f => ({
-        name: f.replace('.conf', ''),
+        name: f.replace('.json', ''),
         path: path.join(configDir, f),
-        content: fs.readFileSync(path.join(configDir, f), 'utf-8'),
+        content: JSON.stringify(readConfig(path.join(configDir, f)), null, 2),
       }))
     return files
   } catch {
@@ -521,12 +583,12 @@ ipcMain.handle('config:list', async () => {
 })
 
 // Log Kaydı
-ipcMain.on('app:log', (event, { level, message }) => {
-  appLog(level, message)
+listen('app:log', (event, { level, message }) => {
+  if (['info', 'warn', 'error'].includes(level) && typeof message === 'string') appLog(level, message.slice(0, 4000))
 })
 
 // Log klasörünü dosya yöneticisinde aç
-ipcMain.on('app:open-log-dir', () => {
+listen('app:open-log-dir', () => {
   try {
     if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true })
     shell.openPath(logDir)
@@ -534,11 +596,11 @@ ipcMain.on('app:open-log-dir', () => {
 })
 
 // Log klasörü yolunu renderer'a gönder
-ipcMain.handle('app:get-log-path', () => logDir)
+handle('app:get-log-path', () => logDir)
 
 // Pencere kontrolü
-ipcMain.on('window:minimize', () => mainWindow?.minimize())
-ipcMain.on('window:close', () => mainWindow?.hide())
+listen('window:minimize', () => mainWindow?.minimize())
+listen('window:close', () => mainWindow?.hide())
 
 // ============================================================
 // APP LIFECYCLE
@@ -564,6 +626,9 @@ if (!gotSingleInstanceLock) {
     createWindow()
     const trayManager = createTray()
     app.trayManager = trayManager
+    protectionReady = xtpClient.probeProtection().catch(error => { appLog('error', 'Ağ koruması denetlenemedi: ' + error.message); throw error })
+    // Attach a handler even when the renderer has not requested a protected action.
+    protectionReady.catch(() => {})
     
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
@@ -576,19 +641,23 @@ if (!gotSingleInstanceLock) {
     // Tray app: kapatma, sadece gizle
   })
 
-  let isDisconnecting = false;
+  let isDisconnecting = false
   app.on('before-quit', async (e) => {
-    if (currentVpnInterface && !isDisconnecting) {
-      e.preventDefault();
-      isDisconnecting = true;
-      try { 
-        // 5 saniye timeout ile VPN'i kapat, takılı kalmasın
-        await Promise.race([
-          disconnectVpn(currentVpnInterface),
-          new Promise(resolve => setTimeout(resolve, 5000))
-        ]);
-      } catch {}
-      app.exit(0); // Zorla kapat (arka planda takılı kalmaması için)
+    app.isQuitting = true
+    if (isDisconnecting) { e.preventDefault(); return }
+    if ((xtpClient.ws || xtpClient.tunProcess || xtpClient.protectionState?.active) && !isDisconnecting) {
+      e.preventDefault()
+      isDisconnecting = true
+      try {
+        await xtpClient.disconnect()
+      } catch (error) {
+        isDisconnecting = false
+        app.isQuitting = false
+        mainWindow?.show()
+        dialog.showErrorBox('Trafik koruması açık kaldı', 'İnternet erişimi kilitli tutuluyor. Uygulamadaki İnterneti geri aç düğmesini kullanın.\n\n' + error.message)
+        return
+      }
+      app.exit(0)
     }
   })
 }

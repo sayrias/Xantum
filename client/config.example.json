@@ -1,0 +1,6 @@
+{
+  "serverIp": "vpn.example.com",
+  "apiUrl": "https://vpn.example.com:51821",
+  "xtpUrl": "wss://vpn.example.com:8443",
+  "inviteToken": "REPLACE_WITH_A_LONG_RANDOM_SECRET"
+}

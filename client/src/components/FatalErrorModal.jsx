@@ -13,7 +13,7 @@ export default function FatalErrorModal() {
 
     // Main process'ten gelen fatal hata olayını dinle
     if (window.electronAPI?.onFatalError) {
-      window.electronAPI.onFatalError((data) => {
+      return window.electronAPI.onFatalError((data) => {
         setError(data);
         if (data.logDir) setLogPath(data.logDir);
       });

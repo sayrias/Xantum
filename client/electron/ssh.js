@@ -1,34 +1,8 @@
-const { NodeSSH } = require('node-ssh')
+'use strict'
 
-async function setupServerViaSSH({ host, username, password }) {
-  const ssh = new NodeSSH()
-  
-  try {
-    // 1. Sunucuya bağlan
-    await ssh.connect({
-      host,
-      username,
-      password,
-      readyTimeout: 15000
-    })
-
-    // 2. Setup scriptini indir ve çalıştır
-    const setupScriptUrl = 'https://raw.githubusercontent.com/eren/xantum/main/server/setup.sh' // Varsayımsal URL, daha sonra GitHub linkiyle değiştirilmeli
-    // Şu anlık scripti bilgisayardan okuyup sunucuya yükleyeceğiz.
-    
-    // Geliştirme aşamasında lokalden okumak için (Production'da github'dan curl ile indirilmeli)
-    // Ancak bu modül şimdilik temel SSH testini yapacak
-    const result = await ssh.execCommand('echo "SSH Bağlantısı Başarılı!"')
-    
-    return { success: true, message: result.stdout }
-  } catch (error) {
-    console.error("SSH Hatası:", error)
-    return { success: false, error: error.message }
-  } finally {
-    ssh.dispose()
-  }
+// Compatibility for the old IPC entry. Server installation now uses the reviewed
+// TLS-aware scripts/setup-server.sh flow; a connection echo is not a deployment.
+async function setupServerViaSSH() {
+  return { success: false, error: 'Sunucu kurulumu için docs/KURULUM.md içindeki TLS ve SSH adımlarını kullanın.' }
 }
-
-module.exports = {
-  setupServerViaSSH
-}
+module.exports = { setupServerViaSSH }

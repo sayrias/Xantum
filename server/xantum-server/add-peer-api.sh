@@ -43,7 +43,7 @@ cat << EOF
 {
   "address": "${PEER_IP}/32",
   "dns": "1.1.1.1, 8.8.8.8",
-  "mtu": 1420,
+  "mtu": 1360,
   "serverPublicKey": "${SERVER_PUBLIC_KEY}",
   "presharedKey": "${PSK}",
   "endpoint": "${SERVER_PUBLIC_IP}:51820",

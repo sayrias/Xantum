@@ -1,38 +1,38 @@
 {
   "name": "xantum",
   "version": "1.0.0",
-  "description": "Xantum — Kişisel WireGuard VPN Masaüstü Uygulaması",
-  "homepage": "https://xantum.app",
+  "description": "Xantum — Kişisel XTP VPN Masaüstü Uygulaması",
+  "homepage": "https://github.com/sayrias/VPN-App",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "dev": "concurrently --kill-others-on-fail \"vite\" \"wait-on --timeout 30000 --interval 500 http://localhost:5173 && electron .\"",
     "dev:ui": "vite",
-    "build": "vite build && electron-builder",
-    "build:linux": "vite build && electron-builder --linux",
-    "build:win": "vite build && electron-builder --win",
-    "build:all": "vite build && electron-builder --linux --win",
+    "build": "vite build && electron-builder --config build/builder-config.cjs",
+    "build:linux": "vite build && electron-builder --config build/builder-config.cjs --linux",
+    "build:win": "vite build && electron-builder --config build/builder-config.cjs --win",
+    "build:all": "vite build && electron-builder --config build/builder-config.cjs --linux --win",
     "build:ui": "vite build",
     "preview": "vite preview",
-    "electron": "electron ."
+    "electron": "electron .",
+    "test": "node --test ../tests/*.test.cjs"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.3.1",
-    "ini": "^4.1.3",
     "node-fetch": "^3.3.2",
-    "node-ssh": "^13.2.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.12.7",
     "simple-peer": "^9.11.1",
-    "socket.io-client": "^4.8.3"
+    "socket.io-client": "^4.8.3",
+    "ws": "^8.22.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.1",
-    "concurrently": "^9.0.1",
-    "electron": "^32.1.2",
-    "electron-builder": "^25.0.5",
-    "vite": "^5.4.8",
-    "wait-on": "^8.0.1"
+    "@vitejs/plugin-react": "^6.1.2",
+    "concurrently": "^10.0.6",
+    "electron": "^45.2.1",
+    "electron-builder": "^26.18.0",
+    "vite": "^8.3.5",
+    "wait-on": "^9.5.1"
   },
   "build": {
     "appId": "com.xantum.app",
@@ -45,7 +45,6 @@
       "dist/**/*",
       "electron/**/*",
       "assets/**/*",
-      "config.json",
       "!electron/helper",
       "!logs/**",
       "!logs",
@@ -69,17 +68,47 @@
         }
       ],
       "category": "Network",
-      "icon": "assets/icon.png",
-      "description": "Xantum — Kişisel WireGuard VPN Masaüstü Uygulaması",
-      "maintainer": "Xantum <support@xantum.app>"
+      "icon": "assets/logo_square.png",
+      "description": "Xantum — Kişisel XTP VPN Masaüstü Uygulaması",
+      "maintainer": "Xantum <support@xantum.app>",
+      "extraResources": [
+        {
+          "from": "bin/xtp-tun-helper",
+          "to": "bin/xtp-tun-helper"
+        },
+        {
+          "from": "native/network-protection-linux.py",
+          "to": "helpers/network-protection-linux.py"
+        },
+        {
+          "from": "native/org.xantum.helpers.policy",
+          "to": "helpers/org.xantum.helpers.policy"
+        }
+      ],
+      "syncDesktopName": true
     },
     "deb": {
       "depends": [
-        "wireguard-tools",
+        "libgtk-3-0",
         "libnotify4",
+        "libnss3",
+        "libxss1",
         "libxtst6",
-        "libnss3"
-      ]
+        "xdg-utils",
+        "libatspi2.0-0",
+        "libuuid1",
+        "libsecret-1-0",
+        "libgbm1",
+        "libasound2t64 | libasound2",
+        "libcups2t64 | libcups2",
+        "libxkbcommon0",
+        "python3",
+        "nftables",
+        "iproute2",
+        "pkexec | policykit-1"
+      ],
+      "afterInstall": "build/after-install.tpl",
+      "afterRemove": "build/after-remove.tpl"
     },
     "win": {
       "target": [
@@ -91,19 +120,32 @@
         }
       ],
       "icon": "assets/icon.ico",
-      "signAndEditExecutable": false,
-      "sign": false,
-      "verifyUpdateCodeSignature": false
+      "requestedExecutionLevel": "requireAdministrator",
+      "extraResources": [
+        {
+          "from": "bin/xtp-tun-helper.exe",
+          "to": "bin/xtp-tun-helper.exe"
+        },
+        {
+          "from": "bin/wintun.dll",
+          "to": "bin/wintun.dll"
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "perMachine": false,
+      "perMachine": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "deleteAppDataOnUninstall": false,
-      "installerIcon": "assets/icon.ico"
+      "installerIcon": "assets/icon.ico",
+      "include": "build/installer.nsh"
     },
-    "extraResources": []
-  }
+    "beforePack": "./build/validate-package.cjs"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "desktopName": "com.xantum.app.desktop"
 }

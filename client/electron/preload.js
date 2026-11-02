@@ -14,8 +14,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     status: () => ipcRenderer.invoke('vpn:status'),
     stats: (interfaceName) => ipcRenderer.invoke('vpn:stats', interfaceName),
     getPublicIp: () => ipcRenderer.invoke('vpn:get-public-ip'),
+    getIpInfo:   () => ipcRenderer.invoke('vpn:get-ip-info'),   /* IP + geo data */
+    checkProtection: () => ipcRenderer.invoke('vpn:protection:check'),
+    releaseProtection: () => ipcRenderer.invoke('vpn:protection:release'),
+    installHelpers: () => ipcRenderer.invoke('vpn:helpers:install'),
     getConnectedTime: () => ipcRenderer.invoke('vpn:get-connected-time'),
   },
+
   
   // ---- Dosya/Config ----
   dialog: {
@@ -34,14 +39,28 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // ---- Tray mesajları dinle ----
   onTrayToggle: (callback) => {
-    ipcRenderer.on('tray-toggle-vpn', callback)
-    return () => ipcRenderer.removeAllListeners('tray-toggle-vpn')
+    const listener = () => callback()
+    ipcRenderer.on('tray-toggle-vpn', listener)
+    return () => ipcRenderer.removeListener('tray-toggle-vpn', listener)
   },
   onNetworkStats: (callback) => ipcRenderer.on('network-stats', (event, data) => callback(data)),
   
   // Yeni özellikler
   setupServerViaSSH: (credentials) => ipcRenderer.invoke('setup-server-ssh', credentials),
   getNetworkStatus: () => ipcRenderer.invoke('get-network-status'),
+  serverConfigLoad: () => ipcRenderer.invoke('server-config:load'),
+  serverConfigSave: data => ipcRenderer.invoke('server-config:save', data),
+  getChatConnection: () => ipcRenderer.invoke('chat:connection'),
+  onProtectionChange: callback => {
+    const listener = (_, status) => callback(status)
+    ipcRenderer.on('vpn-protection-changed', listener)
+    return () => ipcRenderer.removeListener('vpn-protection-changed', listener)
+  },
+  onVpnDisconnected: (callback) => {
+    const listener = () => callback()
+    ipcRenderer.on('vpn-disconnected', listener)
+    return () => ipcRenderer.removeListener('vpn-disconnected', listener)
+  },
   autoRegisterVPN: () => ipcRenderer.invoke('auto-register-vpn'),
   
   // Loglama
@@ -51,7 +70,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openLogDir: () => ipcRenderer.send('app:open-log-dir'),
   getLogPath: () => ipcRenderer.invoke('app:get-log-path'),
   onFatalError: (callback) => {
-    ipcRenderer.on('app:fatal-error', (event, data) => callback(data))
-    return () => ipcRenderer.removeAllListeners('app:fatal-error')
+    const listener = (event, data) => callback(data)
+    ipcRenderer.on('app:fatal-error', listener)
+    return () => ipcRenderer.removeListener('app:fatal-error', listener)
   },
+
+  // ---- Electron Ayarları (fullTunnel vb.) ----
+  settingsSave: (data) => ipcRenderer.invoke('settings:save', data),
+  settingsLoad: () => ipcRenderer.invoke('settings:load'),
 })

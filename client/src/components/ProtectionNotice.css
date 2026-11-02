@@ -1,0 +1,13 @@
+.protection-notice { flex-shrink: 0; padding: 12px 14px; background: #19263a; border-radius: 10px; color: #edf4ff; }
+.protection-notice.is-guarded { background: #102f31; }
+.protection-notice.is-blocked { background: #3b2a1b; }
+.protection-notice-copy strong { font-size: 13px; font-weight: 650; }
+.protection-notice-copy p { margin: 4px 0 0; max-width: 75ch; color: #e6d7c8; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.protection-notice.is-guarded p { color: #c6e5df; }
+.protection-notice-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.protection-notice-actions button { background: #223b56; color: #f4f7ff; border: 1px solid #7790aa; border-radius: 6px; padding: 7px 10px; min-height: 34px; font: inherit; font-size: 12px; cursor: pointer; }
+.protection-notice-actions button:hover:not(:disabled) { background: #304c69; }
+.protection-notice-actions .protection-release { background: transparent; }
+.protection-notice-actions button:disabled { opacity: .55; cursor: wait; }
+.protection-notice-actions button:focus-visible { outline: 2px solid #aabaff; outline-offset: 3px; }
+.protection-notice-error { color: #ffd4db; font-size: 13px; margin-top: 8px; overflow-wrap: anywhere; }

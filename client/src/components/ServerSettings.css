@@ -1,0 +1,20 @@
+.server-settings { min-width: 0; }
+.server-settings .server-settings-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
+.server-settings .server-settings-heading h3 { margin: 0; font-size: 17px; color: #eef3ff; }
+.server-settings .server-settings-status { display: inline-flex; gap: 7px; align-items: center; color: #79e4d4; font-size: 13px; overflow-wrap: anywhere; }
+.server-settings > p, .server-settings form > p { margin: 2px 0 8px; line-height: 1.6; }
+.server-settings form { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.server-settings .server-settings-saved { display: flex; flex-direction: column; gap: 5px; padding: 4px 0 8px; min-width: 0; }
+.server-settings .server-settings-saved span { font-size: 13px; color: #b4bed0; }
+.server-settings .server-settings-saved strong { font-size: 16px; font-weight: 600; color: #eef3ff; overflow-wrap: anywhere; user-select: text; }
+.server-settings .server-settings-key { display: flex; gap: 8px; min-width: 0; align-items: stretch; }
+.server-settings .server-settings-key input { flex: 1; width: 0; }
+.server-settings .server-settings-key button { margin: 0; align-self: stretch; }
+.server-settings .server-settings-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.server-settings button { min-height: 40px; font: inherit; font-size: 13px; }
+.server-settings button:hover:not(:disabled) { background: #6b5fe0; }
+.server-settings button.server-settings-secondary { background: #19263a; color: #dce5f5; border: 1px solid #53617b; }
+.server-settings button.server-settings-secondary:hover:not(:disabled) { background: #263650; }
+.server-settings input { caret-color: #79e4d4; }
+.server-settings input::selection { background: #34315c; color: #eef3ff; }
+.server-settings p.server-settings-feedback { color: #dce5f5; overflow-wrap: anywhere; }

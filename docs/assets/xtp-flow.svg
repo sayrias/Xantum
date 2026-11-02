@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="256" viewBox="0 0 1280 256" role="img" aria-labelledby="title desc">
+<title id="title">XTP bağlantı akışı</title>
+<desc id="desc">Windows veya Linux istemcisi TLS ve WSS üzerinden kendi Linux sunucuna bağlanır. Sunucu TUN ve IPv4 NAT üzerinden internete çıkış sağlar. Şema gerçek cihaz testinin yerini tutmaz.</desc>
+<rect x="1" y="1" width="1278" height="254" rx="20" fill="#0d1526" stroke="#263449" stroke-width="2"/>
+<g fill="none" stroke="#3ecfcf" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M370 128h150m-11-8 11 8-11 8M838 128h148m-11-8 11 8-11 8"/></g>
+<g fill="#16243a"><rect x="56" y="70" width="312" height="116" rx="12"/><rect x="522" y="70" width="314" height="116" rx="12"/><rect x="988" y="70" width="236" height="116" rx="12"/></g>
+<g font-family="Inter, Noto Sans, sans-serif" text-anchor="middle" fill="#f0f4ff" font-size="25" font-weight="600"><text x="212" y="119">Masaüstü istemcisi</text><text x="679" y="119">Kendi Linux sunucun</text><text x="1106" y="119">İnternet</text></g>
+<g font-family="Inter, Noto Sans, sans-serif" text-anchor="middle" fill="#b4c3d7" font-size="18"><text x="212" y="151">Windows / Linux</text><text x="679" y="151">XTP + TUN + IPv4 NAT</text><text x="1106" y="151">Hedef servis</text><text x="445" y="99" fill="#3ecfcf">TLS / WSS</text><text x="912" y="99">Çıkış</text><text x="640" y="225" font-size="16">Şema, mimariyi gösterir. Gerçek koruma kapsamı yayın kontrol belgesinde izlenir.</text></g>
+</svg>

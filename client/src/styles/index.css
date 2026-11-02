@@ -171,10 +171,7 @@ body {
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent-cyan);
 }
 
 .titlebar-controls {
@@ -889,3 +886,47 @@ body {
   .connect-button { width: 95px; height: 95px; }
   .connection-section { padding: 12px 16px 8px; gap: 12px; }
 }
+
+/* Chat: persistent session, bounded message history, readable connection states. */
+.chat-layout { display: flex; gap: 16px; height: 100%; min-height: 0; color: #f0f4ff; --text-muted: #a3aec2; --text-secondary: #b4bed0; }
+.chat-sidebar { flex: 0 0 180px; padding: 12px; overflow: auto; background: #101929; border-radius: 12px; }
+.chat-sidebar > div + div { margin-top: 24px; }
+.chat-sidebar button { min-height: 36px; }
+.chat-conversation { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #101929; border-radius: 12px; padding: 16px; }
+.chat-header { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid #293448; }
+.chat-header h2 { font-size: 16px; font-weight: 600; }
+.chat-header span, .chat-composer-hint { color: #a3aec2; font-size: 12px; }
+.chat-status { white-space: nowrap; }
+.chat-status.is-online { color: #69dfbe; }
+.chat-error { color: #ffd3d8; background: #422331; padding: 10px; margin-top: 10px; font-size: 13px; border-radius: 8px; }
+.chat-messages { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 0; scrollbar-color: #53617b #101929; }
+.chat-empty { text-align: center; padding: 32px 8px; color: #b4bed0; }
+.chat-empty > i { font-size: 24px; color: #a5a1ff; margin-bottom: 12px; }
+.chat-empty h3 { font-size: 15px; margin-bottom: 8px; color: #f0f4ff; }
+.chat-empty p { font-size: 13px; line-height: 1.7; }
+.chat-message { margin-bottom: 16px; max-width: 92%; overflow-wrap: anywhere; user-select: text; }
+.chat-message.is-mine { margin-left: auto; }
+.chat-message-meta { display: flex; gap: 10px; align-items: baseline; font-size: 12px; margin-bottom: 4px; }
+.chat-message-meta time { color: #a3aec2; font-size: 11px; font-variant-numeric: tabular-nums; }
+.chat-message p { background: #202c40; padding: 10px 12px; border-radius: 8px; font-size: 14px; white-space: pre-wrap; }
+.chat-message.is-mine p { background: #39336e; }
+.chat-composer { display: flex; gap: 8px; }
+.chat-composer input { min-width: 0; flex: 1; background: #0b1220; color: #f0f4ff; border: 1px solid #53617b; border-radius: 8px; padding: 10px; font: inherit; caret-color: #a5a1ff; }
+.chat-composer input::placeholder { color: #a3aec2; }
+.chat-composer button { background: #564bc5; color: white; border: 0; border-radius: 8px; padding: 10px 14px; font: inherit; cursor: pointer; }
+.chat-composer button:hover:not(:disabled) { background: #685ad9; }
+.chat-layout button:disabled { opacity: .55; cursor: not-allowed; }
+.chat-layout :focus-visible { outline: 2px solid #b2adff; outline-offset: 3px; }
+.chat-layout ::selection { background: #6054aa; color: white; }
+.chat-composer-hint { margin-top: 6px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@media (max-width: 620px) { .chat-sidebar { flex-basis: 140px; padding: 8px; } .chat-layout { gap: 8px; } .chat-conversation { padding: 10px; } .chat-header { flex-wrap: wrap; } }
+.server-settings { display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px; border-bottom: 1px solid #3a465c; }
+.server-settings h3 { font-size: 16px; }
+.server-settings p { color: #b4bed0; font-size: 13px; }
+.server-settings label { color: #d5dced; font-size: 13px; margin-top: 6px; }
+.server-settings input { background: #0b1220; color: #f0f4ff; border: 1px solid #53617b; border-radius: 8px; padding: 10px; font: inherit; min-width: 0; }
+.server-settings input::placeholder { color: #a3aec2; }
+.server-settings button { align-self: flex-start; margin-top: 4px; padding: 10px 14px; border: 0; border-radius: 8px; color: white; background: #564bc5; cursor: pointer; }
+.server-settings button:disabled { opacity: .55; cursor: wait; }
+.server-settings :focus-visible { outline: 2px solid #b2adff; outline-offset: 3px; }

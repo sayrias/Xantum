@@ -1,3 +1,4 @@
+import ServerSettings from './ServerSettings.jsx'
 import React, { useState, useEffect, useRef } from 'react'
 
 // Tuş atama bileşeni
@@ -63,6 +64,7 @@ export default function SettingsTab() {
     notifications: true,
     autoConnect: false,
     killSwitch: true,
+    fullTunnel: true,
     micDeviceId: 'default',
     speakerDeviceId: 'default',
     micLoopback: false,
@@ -87,26 +89,45 @@ export default function SettingsTab() {
 
   // Ayarları yükle
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('xantum_settings')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        setSettings(prev => ({ ...prev, ...parsed }))
-        if (parsed.nickname) setTempName(parsed.nickname)
-      }
-    } catch (e) {}
+    const loadAll = async () => {
+      try {
+        const saved = localStorage.getItem('xantum_settings')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          setSettings(prev => ({ ...prev, ...parsed }))
+          if (parsed.nickname) setTempName(parsed.nickname)
+        }
+      } catch (e) {}
+      // Electron seviyesi ayarları da yükle (fullTunnel)
+      try {
+        if (window.electronAPI && window.electronAPI.settingsLoad) {
+          const elSettings = await window.electronAPI.settingsLoad()
+          if (elSettings && typeof elSettings.fullTunnel === 'boolean') {
+            setSettings(prev => ({ ...prev, fullTunnel: elSettings.fullTunnel }))
+          }
+        }
+      } catch (e) {}
+    }
+    loadAll()
   }, [])
 
   // Ayarları kaydet
   useEffect(() => {
     localStorage.setItem('xantum_settings', JSON.stringify(settings))
+    // fullTunnel electron'a da kaydet
+    try {
+      if (window.electronAPI && window.electronAPI.settingsSave) {
+        window.electronAPI.settingsSave({ fullTunnel: settings.fullTunnel })
+      }
+    } catch {}
   }, [settings])
 
   // Cihazları getir
   useEffect(() => {
     const getDevices = async () => {
       try {
-        await navigator.mediaDevices.getUserMedia({ audio: true })
+        const permissionStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        permissionStream.getTracks().forEach(track => track.stop())
         const allDevices = await navigator.mediaDevices.enumerateDevices()
         const audioinput = allDevices.filter(d => d.kind === 'audioinput')
         const audiooutput = allDevices.filter(d => d.kind === 'audiooutput')
@@ -222,6 +243,7 @@ export default function SettingsTab() {
   return (
     <div className="glass-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
       
+      <ServerSettings />
       {/* GENEL AYARLAR */}
       <div>
         <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: 'var(--text-primary)' }}>
@@ -256,6 +278,16 @@ export default function SettingsTab() {
             <button onClick={() => toggleSetting('autoStart')} className="toggle-btn" style={{ background: settings.autoStart ? 'var(--accent-purple)' : 'rgba(255,255,255,0.1)' }}>
               {settings.autoStart ? 'AÇIK' : 'KAPALI'}
             </button>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '10px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div>
+              <h4 style={{ margin: '0 0 4px 0', fontSize: '12px' }}>Tam VPN · v1.0.0</h4>
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
+                IPv4 trafiğin ve DNS isteklerin XTP tüneline yönlendirilir; IPv6 çıkışı engellenir.<br />
+                Bağlantı kesilirse trafik kilitli kalır. Normal internete dönmek için korumayı kaldırabilirsin.
+              </p>
+            </div>
           </div>
           
         </div>

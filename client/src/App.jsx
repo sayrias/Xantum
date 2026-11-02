@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import logoImg from './assets/logo.png'
 import ConnectionButton from './components/ConnectionButton.jsx'
 import StatusPanel from './components/StatusPanel.jsx'
 import StatsPanel from './components/StatsPanel.jsx'
 import ChatTab from './components/ChatTab.jsx'
 import SettingsTab from './components/SettingsTab.jsx'
+import ProtectionNotice from './components/ProtectionNotice.jsx'
 import FatalErrorModal from './components/FatalErrorModal.jsx'
 import { useVpnStatus } from './hooks/useVpnStatus.js'
 import { useNetworkStats } from './hooks/useNetworkStats.js'
@@ -15,9 +16,17 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home')
   const [selectedConfig, setSelectedConfig] = useState(null)
   const [error, setError] = useState(null)
+  const [registering, setRegistering] = useState(false)
+  const toggleBusy = useRef(false)
 
-  const { status, publicIp, prevIp, connect, disconnect } = useVpnStatus()
+  const { status, publicIp, ipInfo, prevIp, connect, disconnect, checkProtection, releaseProtection, installHelpers } = useVpnStatus()
   const stats = useNetworkStats(status.connected, status.interface)
+
+  useEffect(() => {
+    const changed = () => { setSelectedConfig(null); setError(null) }
+    window.addEventListener('xantum_server_changed', changed)
+    return () => window.removeEventListener('xantum_server_changed', changed)
+  }, [])
 
   // Error auto-clear
   useEffect(() => {
@@ -37,6 +46,40 @@ export default function App() {
     }
   }, [status.error])
 
+  const handleToggle = useCallback(async () => {
+    if (!API) { setError('VPN bağlantısı için Xantum masaüstü uygulamasını açın.'); return }
+    if (status.connecting || toggleBusy.current) return
+    toggleBusy.current = true
+    setRegistering(true)
+    try {
+      if (status.connected) {
+        await disconnect()
+      } else {
+        if (status.protection?.setupRequired) { setError('Bağlanmadan önce yukarıdaki “Korumayı kur” adımını tamamla.'); return }
+        if (!selectedConfig) {
+          // Otomatik kayıt (API üzerinden) dene
+          setError('Sunucuya bağlanılıyor...')
+          try {
+            const res = await API.autoRegisterVPN()
+            if (res.success) {
+              // Otomatik oluşturulan config'i seç ve bağlan
+              setSelectedConfig({ name: 'Otomatik Config', path: res.configPath })
+              await connect(res.configPath)
+            } else {
+              API?.log('error', `Otomatik kayıt başarısız: ${res.error}`)
+              setError(res.error || 'Otomatik kayıt başarısız oldu.')
+            }
+          } catch (e) {
+            API?.log('error', `Ağ hatası: ${e.message}`)
+            setError(e.message)
+          }
+          return
+        }
+        await connect(selectedConfig.path)
+      }
+    } finally { toggleBusy.current = false; setRegistering(false) }
+  }, [status, selectedConfig, connect, disconnect])
+
   // Tray'den gelen toggle komutu
   useEffect(() => {
     if (!API) return
@@ -44,36 +87,7 @@ export default function App() {
       handleToggle()
     })
     return unsub
-  }, [status.connected, selectedConfig])
-
-  const handleToggle = useCallback(async () => {
-    if (status.connecting) return
-    
-    if (status.connected) {
-      await disconnect()
-    } else {
-      if (!selectedConfig) {
-        // Otomatik kayıt (API üzerinden) dene
-        setError('Sunucuya bağlanılıyor...')
-        try {
-          const res = await API.autoRegisterVPN()
-          if (res.success) {
-            // Otomatik oluşturulan config'i seç ve bağlan
-            setSelectedConfig({ name: 'Otomatik Config', path: res.configPath })
-            await connect(res.configPath)
-          } else {
-            API?.log('error', `Otomatik kayıt başarısız: ${res.error}`)
-            setError(res.error || 'Otomatik kayıt başarısız oldu.')
-          }
-        } catch (e) {
-          API?.log('error', `Ağ hatası: ${e.message}`)
-          setError(e.message)
-        }
-        return
-      }
-      await connect(selectedConfig.path)
-    }
-  }, [status, selectedConfig, connect, disconnect])
+  }, [handleToggle])
 
   const handleSelectConfig = (cfg) => {
     setSelectedConfig(cfg)
@@ -100,7 +114,7 @@ export default function App() {
             <button
               className={`titlebar-tab-btn ${activeTab === 'home' ? 'active' : ''}`}
               onClick={() => setActiveTab('home')}
-              title="Ana Sayfa"
+              title="Ana Sayfa" aria-label="Ana Sayfa"
             >
               <span className="titlebar-tab-icon"><i className="fas fa-home"></i></span>
               <span className="titlebar-tab-text">Ana Sayfa</span>
@@ -108,7 +122,7 @@ export default function App() {
             <button
               className={`titlebar-tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
               onClick={() => setActiveTab('settings')}
-              title="Ayarlar"
+              title="Ayarlar" aria-label="Ayarlar"
             >
               <span className="titlebar-tab-icon"><i className="fas fa-cog"></i></span>
               <span className="titlebar-tab-text">Ayarlar</span>
@@ -116,7 +130,7 @@ export default function App() {
             <button
               className={`titlebar-tab-btn ${activeTab === 'chat' ? 'active' : ''}`}
               onClick={() => setActiveTab('chat')}
-              title="Sohbet & Ağ"
+              title="Sohbet & Ağ" aria-label="Sohbet"
             >
               <span className="titlebar-tab-icon"><i className="fas fa-comment-dots"></i></span>
               <span className="titlebar-tab-text">Sohbet</span>
@@ -145,6 +159,7 @@ export default function App() {
         
         {/* Ana içerik */}
         <div className="app-main">
+          <ProtectionNotice protection={status.ready ? status.protection : null} connected={status.connected} connecting={status.connecting || registering} onReconnect={handleToggle} onRelease={releaseProtection} onCheck={checkProtection} onInstall={installHelpers} />
           {/* Hata mesajı */}
           {error && (
             <div className="alert alert-error">
@@ -161,7 +176,7 @@ export default function App() {
               {/* Bağlantı halkası + butonu (Kalan boşluğu doldurup tam ortalar) */}
               <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <ConnectionButton
-                  status={status}
+                  status={{ ...status, connecting: status.connecting || registering }}
                   onClick={handleToggle}
                 />
               </div>
@@ -178,9 +193,11 @@ export default function App() {
                   <StatusPanel
                     status={status}
                     publicIp={publicIp}
+                    ipInfo={ipInfo}
                     prevIp={prevIp}
                     uptime={stats.uptime}
                   />
+
                 </div>
                 
                 <div style={{ flex: 1 }}>
@@ -200,7 +217,7 @@ export default function App() {
 
           {/* ===== CHAT SEKMESİ (Persistant for Voice Chat) ===== */}
           <div style={{ display: activeTab === 'chat' ? 'flex' : 'none', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
-            <ChatTab connected={status.connected} publicIp={publicIp} />
+            <ChatTab connected={status.connected} />
           </div>
 
 
@@ -226,7 +243,7 @@ export default function App() {
               boxShadow: status.connected ? '0 0 6px #00d4aa' : 'none',
             }} />
             <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-              {status.connected ? 'Güvenli Bağlantı' : 'Korumasız'}
+              {status.connected ? 'XTP bağlı' : status.protection?.active ? 'Trafik kilitli' : 'Bağlantı kapalı'}
             </span>
           </div>
         </div>

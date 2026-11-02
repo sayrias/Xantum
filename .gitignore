@@ -15,3 +15,54 @@ dist-electron/
 
 # OS Mac
 .DS_Store
+
+# Credentials and generated native/release output
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.local.json
+client/bin/
+client/logs/
+coverage/
+
+# Python test/broker bytecode
+__pycache__/
+*.py[cod]
+
+# Private connection profiles and release artifacts
+connection-profile.json
+connection-profile.*.json
+*.private.json
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.ovpn
+*.pcap
+*.pcapng
+*.dmp
+*.core
+*.AppImage
+*.deb
+*.exe
+*.msi
+*.dll
+*.zip
+*.tar.gz
+*.sha256
+
+# Local planning, audit dumps and scratch material
+/task.md
+/DESIGN.md
+/docs/private/
+/development/private/
+/development/chat-preview.png
+/docs/RELEASE-v1.0.0.md
+/docs/CHANGELOG-v1.0.0.md
+/docs/DEPENDENCIES.md
+.idea/
+.vscode/
+playwright-report/
+test-results/
