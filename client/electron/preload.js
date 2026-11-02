@@ -7,6 +7,15 @@ const { contextBridge, ipcRenderer } = require('electron')
 // ============================================================
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  locale: {
+    get: () => ipcRenderer.invoke('locale:get'),
+    set: locale => ipcRenderer.invoke('locale:set', locale),
+    onChange: callback => {
+      const listener = (_, value) => callback(value)
+      ipcRenderer.on('locale:changed', listener)
+      return () => ipcRenderer.removeListener('locale:changed', listener)
+    },
+  },
   // ---- VPN Kontrol ----
   vpn: {
     connect: (configPath) => ipcRenderer.invoke('vpn:connect', configPath),

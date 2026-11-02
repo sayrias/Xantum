@@ -1,4 +1,5 @@
 'use strict'
+const { t, translateError, localizeResult } = require('./localization')
 
 const fs = require('node:fs')
 const path = require('node:path')
@@ -118,12 +119,12 @@ function runInstaller(file, args) {
   return new Promise((resolve, reject) => execFile(file, args,
     { timeout: 120000, maxBuffer: 128 * 1024, windowsHide: true }, (error, stdout, stderr) => {
       if (error) {
-        if (error.code === 'ENOENT') error.message = 'Yönetici onayı aracı bulunamadı. Dağıtımınızın pkexec/polkit paketini kurup yeniden deneyin.'
-        else if (error.code === 126 || error.code === 127) error.message = 'Yönetici onayı veya sistem Python 3 başlatılamadı. Python 3 ve polkit kurulumunu kontrol edip yeniden deneyin.'
-        else error.message = String(stderr || error.message).trim()
+        if (error.code === 'ENOENT') error.message = t('Yönetici onayı aracı bulunamadı. Dağıtımınızın pkexec/polkit paketini kurup yeniden deneyin.')
+        else if (error.code === 126 || error.code === 127) error.message = t('Yönetici onayı veya sistem Python 3 başlatılamadı. Python 3 ve polkit kurulumunu kontrol edip yeniden deneyin.')
+        else error.message = translateError(String(stderr || error.message).trim())
         reject(error); return
       }
-      try { resolve(JSON.parse(stdout)) } catch { reject(new Error('Yardımcı kurulumu doğrulanabilir bir yanıt vermedi.')) }
+      try { resolve(JSON.parse(stdout)) } catch { reject(new Error(t('Yardımcı kurulumu doğrulanabilir bir yanıt vermedi.'))) }
     }))
 }
 
@@ -135,12 +136,12 @@ async function installLinuxHelpers({ resourcesPath, run = runInstaller, files = 
     try {
       fd = files.openSync(source, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK)
       const info = files.fstatSync(fd)
-      if (!info.isFile() || info.size <= 0 || info.size > entry.limit) throw new Error('Geçersiz yardımcı dosyası.')
+      if (!info.isFile() || info.size <= 0 || info.size > entry.limit) throw new Error(t('Geçersiz yardımcı dosyası.'))
       const data = files.readFileSync(fd)
-      if (data.length !== info.size) throw new Error('Yardımcı dosyası okuma sırasında değişti.')
+      if (data.length !== info.size) throw new Error(t('Yardımcı dosyası okuma sırasında değişti.'))
       return { ...entry, data }
     } catch (error) {
-      throw new Error(`Linux yardımcı kaynağı hazır değil (${entry.name}). Güncel Linux paketini yeniden indirin veya “bash scripts/build-client.sh” ile istemciyi derleyin.`, { cause: error })
+      throw new Error(t('Linux yardımcı kaynağı hazır değil ({file}). Güncel Linux paketini yeniden indirin veya “bash scripts/build-client.sh” ile istemciyi derleyin.', { file: entry.name }), { cause: error })
     } finally { if (fd !== undefined) files.closeSync(fd) }
   })
   const staging = files.mkdtempSync('/tmp/xantum-helpers-')
@@ -152,7 +153,7 @@ async function installLinuxHelpers({ resourcesPath, run = runInstaller, files = 
       manifest[entry.name] = crypto.createHash('sha256').update(entry.data).digest('hex')
     }
     const result = await run('/usr/bin/pkexec', ['/usr/bin/python3', '-I', '-c', INSTALLER_PYTHON, staging, JSON.stringify(manifest)])
-    if (result?.installed !== true) throw new Error('Linux yardımcı kurulumu tamamlanmadı.')
+    if (result?.installed !== true) throw new Error(t('Linux yardımcı kurulumu tamamlanmadı.'))
     return { installed: true }
   } finally { files.rmSync(staging, { recursive: true, force: true }) }
 }

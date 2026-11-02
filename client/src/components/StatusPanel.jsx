@@ -1,3 +1,4 @@
+import { t, useLocale } from '../i18n/useLocale.jsx'
 import React from 'react'
 import { formatUptime } from '../hooks/useNetworkStats'
 
@@ -9,13 +10,14 @@ import { formatUptime } from '../hooks/useNetworkStats'
  * - Sunucu konumu (ISP + şehir + ülke)
  */
 export default function StatusPanel({ status, publicIp, ipInfo, prevIp, uptime }) {
+  const { locale, numberLocale } = useLocale()
   const { connected, connecting } = status
   const state = connecting ? 'connecting' : connected ? 'connected' : 'disconnected'
 
   const stateText = {
-    connected:    'Bağlı',
-    disconnected: 'Bağlantı Kesildi',
-    connecting:   'Bağlanıyor...',
+    connected:    t("Bağlı"),
+    disconnected: t("Bağlantı Kesildi"),
+    connecting:   t("Bağlanıyor..."),
   }
 
   /* Gerçek coğrafi bilgiler */
@@ -27,17 +29,17 @@ export default function StatusPanel({ status, publicIp, ipInfo, prevIp, uptime }
 
   /* Bağlı durumda ülke adı büyük harf label olarak */
   const ipLabel = connected
-    ? `${countryName ? countryName.toUpperCase() + ' — ' : ''}ÇIKIŞ IP`
-    : 'Gerçek IP'
+    ? `${countryName ? countryName.toUpperCase() + ' — ' : ''}${t('ÇIKIŞ IP')}`
+    : t("Gerçek IP")
 
   /* Sunucu konum satırı: ISP + şehir + ülke */
-  const serverLocationLine = [isp, city, countryName].filter(Boolean).join(' — ') || 'Özel Ağ Tüneli'
+  const serverLocationLine = [isp, city, countryName].filter(Boolean).join(' — ') || t("Özel Ağ Tüneli")
 
   return (
     <div className="glass-card status-card">
       {/* Başlık + badge */}
       <div className="status-header">
-        <span className="status-label">Bağlantı Durumu</span>
+        <span className="status-label">{t("Bağlantı Durumu")}</span>
         <div id="status-badge" className={`status-badge ${state}`}>
           <div className="status-dot" />
           <span>{stateText[state]}</span>
@@ -50,7 +52,7 @@ export default function StatusPanel({ status, publicIp, ipInfo, prevIp, uptime }
           <span className="ip-label">
             {connected
               ? <><i className="fas fa-lock" style={{ marginRight: '4px' }} /> {ipLabel}</>
-              : <><i className="fas fa-globe" style={{ marginRight: '4px' }} /> Gerçek IP</>
+              : <><i className="fas fa-globe" style={{ marginRight: '4px' }} />{t(" Gerçek IP")}</>
             }
           </span>
           <span id="current-ip" className="ip-value">
@@ -63,8 +65,7 @@ export default function StatusPanel({ status, publicIp, ipInfo, prevIp, uptime }
             )}
           </span>
           {connected && prevIp && prevIp !== displayIp && (
-            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-              Önceki: {prevIp}
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{t(" Önceki: ")}{prevIp}
             </span>
           )}
         </div>
@@ -95,13 +96,11 @@ export default function StatusPanel({ status, publicIp, ipInfo, prevIp, uptime }
               <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--accent-green)' }}>
                 {serverLocationLine}
               </div>
-              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                Özel Ağ Tüneli · Aktif
-              </div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{t(" Özel Ağ Tüneli · Aktif ")}</div>
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Süre</div>
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{t("Süre")}</div>
             <div id="uptime-display" className="uptime-display" style={{ fontSize: '14px' }}>
               {formatUptime(uptime)}
             </div>

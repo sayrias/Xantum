@@ -1,72 +1,48 @@
-# Tam VPN trafik koruması
+# Traffic protection and recovery
 
-Bu belge v1.0.0 kaynak uygulamasını ve doğrulanan sınırları açıklar. Linux'ta gerçek paket testi izole bir ağ namespace'inde geçti. Windows kaynakları derlendi ve API koşulları incelendi; gerçek Windows doğrulaması hâlâ gerekir. [Güncel yayın durumu](GELISTIRME-PLANI.md).
+Xantum routes system IPv4 traffic through its tunnel. External IPv6 traffic is blocked rather than tunneled. The desktop client does not offer per-application or per-site routing.
 
-## Kullanıcı davranışı
+## What happens when you connect
 
-- **Bağlan:** sunucu IPv4 adresi bir kez çözülür, platform koruması kurulur ve doğrulanır. Ardından TLS/XTP bağlantısı ve TUN açılır. IPv4 tünel çıkışı yalnız TUN hazır olduğunda açılır.
-- **Tünel koptu / yardımcı kapandı:** normal internet yönüne otomatik geçilmez. Kurallar Electron ve TUN süreçlerinden bağımsız kalır. Arayüz internetin kilitli olduğunu gösterir.
-- **Yeniden bağlan:** aynı sunucunun önceden doğrulanan adresi ve kayıtlı bağlantı bilgileri kullanılır. Fiziksel DNS'e yeni bir istisna açılmaz. Sunucu IP'si değişmişse korumayı kaldırıp tekrar bağlanmak gerekebilir.
-- **Bağlantıyı kes / İnterneti geri aç / bilinçli uygulamadan çıkış:** yalnız bu oturumun sahipli DNS/filtre/rota kayıtları temizlenir. İşlem başarısızsa başarı gösterilmez; kurtarma araçları korunur.
-- **Uygulama yeniden açıldı:** önceki oturum okunur. Linux başlangıç denetimi yönetici penceresi açmadan muhafazakâr durum gösterir; **Durumu denetle** gerçek kuralları polkit ile doğrular. Kurallar doğrulanana kadar etkin koruma kesinleşmiş gibi gösterilmez.
+The app resolves the server address, installs the protection rules, then opens the verified TLS connection and tunnel. Physical network access is limited to the configured server's API/XTP TCP ports and narrowly scoped DHCP renewal. API and XTP must use the same hostname.
 
-Koruma bütün sistemin IPv4 çıkışını kapsar. Seçmeli uygulama/site özelliği bu sürüme bağlı değildir. Önceden açık bağlantılar yeni ağa taşınamayabilir; ilgili uygulama bağlantıyı yeniden kurmalıdır.
+DNS uses **1.1.1.1** through the tunnel. This protects the client-to-VPN-server path; it does not add a separate encrypted DNS connection between the server and resolver. IPv4 DoH/DoT traffic follows the normal tunnel route. Direct LAN and multicast traffic are blocked; loopback remains available.
 
-## İzin verilen kapsam
+Existing application connections may need to reconnect after changing networks. Corporate DNS policies or restrictive firewalls can prevent name resolution or connectivity.
 
-| Trafik | Davranış |
-| --- | --- |
-| IPv4 uygulama trafiği | Etkin tünelin arayüzünden çıkabilir; diğer fiziksel çıkışlar engellenir |
-| DNS UDP/TCP 53 | Linux'ta hedef ve gerekirse kaynak NAT ile 1.1.1.1'e tünelden yönlendirilir; Windows'ta sahipli NRPT kuralı ve fiziksel çıkış filtresi kullanılır |
-| DoH/DoT ve diğer uygulama protokolleri | IPv4 ise normal tünel kapsamındadır; doğrudan fiziksel çıkış izni yoktur |
-| IPv6 | Dış çıkış engellenir; IPv6 tüneli uygulanmadı |
-| Loopback | Yerel süreçlerin iletişimi için korunur; yerel resolver'ın fiziksel çıkışı ayrıca filtrelenir |
-| VPN sunucusunun XTP/API TCP portları | Aynı IPv4 sunucuda TLS bağlantıları için dar istisna; API ve XTP aynı hostname kullanmalıdır |
-| LAN ve multicast | Özel izin yoktur; fiziksel doğrudan çıkış engellenir |
-| DHCPv4 yenilemesi | Yalnız UDP yerel 68 → uzak 67; Linux'ta root/bilinen sistem DHCP UID'leri, Windows'ta broadcast ve işletim sisteminin bildirdiği DHCP sunucuları ile sınırlandırılır |
+## If the connection drops
 
-DNS resolver seçimi şu an 1.1.1.1'dir. Bu, DNS'in istemci ile VPN sunucusu arasındaki tünelden taşınmasıdır; VPN sunucusundan resolver'a ayrı şifreli DNS protokolü eklenmiş değildir. Windows'ta mevcut daha özel NRPT/kurumsal ilkeler öncelik alabilir; fiziksel engel sızıntıyı durdururken isim çözümlemesini kullanılamaz hale getirebilir. Bu durum gerçek cihaz testine dahildir.
+An unexpected tunnel, helper or application failure leaves the traffic lock in place. Xantum does not silently fall back to your physical internet connection.
 
-## Linux uygulaması
+- Reopen the app and use **Check protection status** if the previous session is shown as unverified.
+- Reconnect to the same server, or choose **Restore internet access** to remove Xantum's protection rules.
+- Disconnecting intentionally or quitting the app normally removes the rules owned by that session.
+- If cleanup fails, the app reports an error. Do not disable the system firewall as a workaround.
 
-- Root sahipli `/usr/local/libexec/xantum/network-protection-linux.py`; izole Python, shell çağırmadan sabit `nft`/`ip` komutları, doğrulanmış argümanlar.
-- `inet xantum_v1` adlı özel nftables tablosu; oturum tokenı/UID ile sahiplik doğrulama. Başka tablolar temizlenmez.
-- DNS DNAT, yeniden rota kararı ve source NAT tamamlandıktan sonra POSTROUTING'de gerçek çıkış arayüzü denetlenir. Mevcut fiziksel bağlantılar için geniş established/related istisnası yoktur.
-- `/run/xantum-protection/state.json`: root yazabilir, normal kullanıcı okuyabilir; endpoint/port, sahiplik ve kural parmak izi içerir, PIN içermez. `flock` eşzamanlı değişimleri sıralar.
-- Kural değişimi nft transaction'ı ile atomiktir. Journal önce yazılır; arada süreç kapanırsa durum doğrulanmamış/kilitli kalır.
-- Sunucu host rotası `proto 186`, metrik1 ve tam gateway/dev ile takip edilir. Kurtarma yalnız kaydedilmiş ve hâlâ eşleşen rotayı kaldırır.
-- Yardımcı yolları ve tüm üst dizinler root sahipli, sembolik bağlantı olmayan ve normal kullanıcı tarafından yazılamayan dizinler olmalıdır. Polkit `auth_admin_keep` yönetici izni sağlar; Electron root çalışmaz.
+Remove the current protection before changing to another server. If the server IP or your network changes, you may need to restore internet access and connect again.
 
-Kaynaktan/AppImage kullanımında `sudo bash client/native/install-linux-helpers.sh` bir kez kurulum yapar. Debian paketinde yardımcı/polkit kurulum ve kaldırma kancaları bulunur. Bu kancaların temiz hedef dağıtımda doğrulanması gerekir.
+## Manual recovery
 
-## Windows uygulaması
-
-- Wintun adaptörü; ağ koruması için ayrı `--protect` komutları aynı native yardımcıda bulunur.
-- Kendi persistent WFP provider/sublayer'ı: IPv4/IPv6 outbound packet ve transport katmanları. Paket katmanı önceden kurulmuş fiziksel akışların da filtreden kaçmasını engeller.
-- İzin kuralları soft permit'tir; başka firewall blokları zorla geçersiz kılınmaz. Tünel arayüzü LUID ve atanmış adresle kontrol edilir.
-- DNS Client üzerinden oturuma özel rastgele işaretli NRPT kuralı eklenir. Yalnız o kayıt kaldırılır; kullanıcının adaptör DNS ayarları topluca değiştirilmez.
-- Sahip SID, endpoint/port ve rota kayıtları WFP provider state içinde tutulur. Aynı isimli ama farklı sahipli kayıtlar değiştirilmez. Kaynak API doğrulaması derlenmiş olması kadar gereklidir; WFP/NRPT runtime testi ayrıca yapılır.
-
-## Kurtarma
-
-Önce uygulamayı açıp **Durumu denetle** ve **İnterneti geri aç** kullan. Uygulama açılamıyorsa Linux'ta aynı masaüstü kullanıcısıyla kurulu helper çağrılabilir:
+Prefer the app's recovery action. If it cannot open, run these on Linux as the same desktop user:
 
 ```bash
 pkexec /usr/local/libexec/xantum/network-protection-linux.py status
 pkexec /usr/local/libexec/xantum/network-protection-linux.py release
 ```
 
-Windows'ta yönetici terminalinde kurulu `resources/bin/xtp-tun-helper.exe --protect status` ve `--protect release` komutları kullanılabilir. Kayıt başka kullanıcıya aitse hata döner; aynı kullanıcı/yönetici hesabı ve sahiplik bilgisiyle kurtarılmalıdır. İşletim sistemi firewall'unu topluca kapatmayın.
+On Windows, open an administrator terminal with the same account and run the installed helper:
 
-Linux kuralları ve journal `/run` içeriği yeniden başlatmada kalmaz. Windows WFP/NRPT kayıtları persistent'tir; sistem yeniden başladığında da kurtarma gerekir. Bu sürüm açılıştan itibaren koruma sağlayan ayrı bir servis içermez; reboot davranışları eşdeğer değildir. Beklenmedik uygulama/helper kapanışında koruma kalması bu kapsamdan ayrıdır.
-
-## Tekrarlanabilir doğrulama
-
-```bash
-npm test --prefix client
-python3 tests/network_protection_netns.py
+```text
+resources\bin\xtp-tun-helper.exe --protect status
+resources\bin\xtp-tun-helper.exe --protect release
 ```
 
-İkinci test kendi user/network namespace'ini açar ve asıl network namespace'inde çalışmayı reddeder. Sanal bağlantılarda gerçek IPv4/IPv6, TCP port istisnası, DNS DNAT+SNAT, önceden açılmış trafik, tünel silinmesi, kural parmak izi, restart ve bilinçli kaldırma kontrol edilir. Host firewall/DNS/rota ayarları değiştirilmez. Kernel user namespace, nftables ve raw socket desteği gerekir.
+These commands remove only Xantum-owned state. A different account's records are not automatically removed.
 
-Gerçek VPS üzerinden throughput, farklı Linux masaüstü ağ yöneticileri, Windows WFP/NRPT, DHCP yenilemesi, uyku/uyanma, temiz kurulum/kaldırma ve fiziksel arayüzde packet capture hâlâ yayın matrisinde ölçülmelidir.
+## Limits
+
+Linux protection is not retained across an OS reboot. Windows filter and DNS records are persistent and may require recovery after reboot. Xantum does not provide a separate service that protects traffic from system startup.
+
+Linux packet behavior has been checked in an isolated network namespace. Windows native sources compile, but real Windows WFP/DNS behavior and different desktop network configurations still require device testing. A connected indicator is not a guarantee that every network scenario has been verified.
+
+TLS protects transport to your server; the destination's HTTPS or other protocol determines protection beyond it. XTP has not received an independent security audit.

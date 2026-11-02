@@ -1,8 +1,10 @@
+import { t, useLocale } from '../i18n/useLocale.jsx'
 import ServerSettings from './ServerSettings.jsx'
 import React, { useState, useEffect, useRef } from 'react'
 
 // Tuş atama bileşeni
 function PttKeyBinder({ currentKey, onKeyChange }) {
+  useLocale()
   const [listening, setListening] = useState(false);
 
   const startListen = () => setListening(true);
@@ -22,7 +24,7 @@ function PttKeyBinder({ currentKey, onKeyChange }) {
     <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <span style={{ fontSize: '11px', color: 'var(--text-primary)' }}>Atanan Tuş</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-primary)' }}>{t("Atanan Tuş")}</span>
           <div style={{
             marginTop: '6px',
             display: 'inline-block',
@@ -48,17 +50,16 @@ function PttKeyBinder({ currentKey, onKeyChange }) {
             fontSize: '11px', cursor: 'pointer', fontWeight: 'bold'
           }}
         >
-          {listening ? 'Tuşa bas...' : 'Değiştir'}
+          {listening ? t("Tuşa bas...") : t("Değiştir")}
         </button>
       </div>
-      <p style={{ margin: '8px 0 0 0', fontSize: '10px', color: 'var(--text-muted)' }}>
-        Ses kanalındayken bu tuşa basılı tuttuğun sürece mikrofon açılır.
-      </p>
+      <p style={{ margin: '8px 0 0 0', fontSize: '10px', color: 'var(--text-muted)' }}>{t(" Ses kanalındayken bu tuşa basılı tuttuğun sürece mikrofon açılır. ")}</p>
     </div>
   );
 }
 
 export default function SettingsTab() {
+  const { locale, numberLocale } = useLocale()
   const [settings, setSettings] = useState({
     autoStart: true,
     notifications: true,
@@ -133,7 +134,7 @@ export default function SettingsTab() {
         const audiooutput = allDevices.filter(d => d.kind === 'audiooutput')
         setDevices({ audioinput, audiooutput })
       } catch (err) {
-        console.error('Cihazlara erişilemedi:', err)
+        console.error(t("Cihazlara erişilemedi:"), err)
       }
     }
     getDevices()
@@ -201,7 +202,7 @@ export default function SettingsTab() {
         checkVolume()
         
       } catch (err) {
-        console.error('Mikrofon testi başlatılamadı:', err)
+        console.error(t("Mikrofon testi başlatılamadı:"), err)
       }
     }
     
@@ -247,46 +248,42 @@ export default function SettingsTab() {
       {/* GENEL AYARLAR */}
       <div>
         <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: 'var(--text-primary)' }}>
-          <i className="fas fa-sliders-h" style={{ marginRight: '6px' }}></i> Genel Ayarlar
-        </h3>
+          <i className="fas fa-sliders-h" style={{ marginRight: '6px' }}></i>{t(" Genel Ayarlar ")}</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           
           <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <h4 style={{ margin: '0 0 6px 0', fontSize: '12px' }}>Kullanıcı Adı (Takma Ad)</h4>
+            <h4 style={{ margin: '0 0 6px 0', fontSize: '12px' }}>{t("Kullanıcı Adı (Takma Ad)")}</h4>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <input 
                 type="text" 
                 value={tempName} 
                 onChange={e => setTempName(e.target.value)}
-                placeholder="Ağda görünecek isminiz..."
+                placeholder={t("Ağda görünecek isminiz...")}
                 style={{ flex: 1, padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', fontSize: '11px', outline: 'none' }}
               />
               <button 
                 onClick={handleSaveNickname}
                 style={{ background: nameSaved ? 'var(--accent-green)' : 'var(--accent-purple)', color: nameSaved ? '#000' : '#fff', border: 'none', padding: '8px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', transition: '0.3s' }}
               >
-                {nameSaved ? <><i className="fas fa-check"></i> Kaydedildi</> : 'Kaydet'}
+                {nameSaved ? <><i className="fas fa-check"></i>{t(" Kaydedildi")}</> : t("Kaydet")}
               </button>
             </div>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '10px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <div>
-              <h4 style={{ margin: '0 0 4px 0', fontSize: '12px' }}>Sistemle Başlat</h4>
-              <p style={{ margin: 0, fontSize: '10px', color: 'var(--text-muted)' }}>Bilgisayar açıldığında otomatik başlasın.</p>
+              <h4 style={{ margin: '0 0 4px 0', fontSize: '12px' }}>{t("Sistemle Başlat")}</h4>
+              <p style={{ margin: 0, fontSize: '10px', color: 'var(--text-muted)' }}>{t("Bilgisayar açıldığında otomatik başlasın.")}</p>
             </div>
             <button onClick={() => toggleSetting('autoStart')} className="toggle-btn" style={{ background: settings.autoStart ? 'var(--accent-purple)' : 'rgba(255,255,255,0.1)' }}>
-              {settings.autoStart ? 'AÇIK' : 'KAPALI'}
+              {settings.autoStart ? t("AÇIK") : t("KAPALI")}
             </button>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '10px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <div>
-              <h4 style={{ margin: '0 0 4px 0', fontSize: '12px' }}>Tam VPN · v1.0.0</h4>
-              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
-                IPv4 trafiğin ve DNS isteklerin XTP tüneline yönlendirilir; IPv6 çıkışı engellenir.<br />
-                Bağlantı kesilirse trafik kilitli kalır. Normal internete dönmek için korumayı kaldırabilirsin.
-              </p>
+              <h4 style={{ margin: '0 0 4px 0', fontSize: '12px' }}>{t("Tam VPN · v1.0.0")}</h4>
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>{t(" IPv4 trafiğin ve DNS isteklerin XTP tüneline yönlendirilir; IPv6 çıkışı engellenir.")}<br />{t(" Bağlantı kesilirse trafik kilitli kalır. Normal internete dönmek için korumayı kaldırabilirsin. ")}</p>
             </div>
           </div>
           
@@ -298,27 +295,26 @@ export default function SettingsTab() {
       {/* SES VE MİKROFON AYARLARI */}
       <div>
         <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: 'var(--text-primary)' }}>
-          <i className="fas fa-microphone" style={{ marginRight: '6px' }}></i> Ses ve Mikrofon
-        </h3>
+          <i className="fas fa-microphone" style={{ marginRight: '6px' }}></i>{t(" Ses ve Mikrofon ")}</h3>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           
           <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <h4 style={{ margin: '0 0 6px 0', fontSize: '12px' }}>Giriş Cihazı (Mikrofon)</h4>
+            <h4 style={{ margin: '0 0 6px 0', fontSize: '12px' }}>{t("Giriş Cihazı (Mikrofon)")}</h4>
             <select 
               value={settings.micDeviceId} 
               onChange={e => updateDevice('micDeviceId', e.target.value)}
               style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', fontSize: '11px', outline: 'none' }}
             >
-              <option value="default">Sistem Varsayılanı</option>
+              <option value="default">{t("Sistem Varsayılanı")}</option>
               {devices.audioinput.map(d => (
-                <option key={d.deviceId} value={d.deviceId}>{d.label || `Mikrofon (${d.deviceId.slice(0,5)})`}</option>
+                <option key={d.deviceId} value={d.deviceId}>{d.label || t('Mikrofon ({id})', { id: d.deviceId.slice(0,5) })}</option>
               ))}
             </select>
             
             <div style={{ marginTop: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                <span>Mikrofon Testi</span>
+                <span>{t("Mikrofon Testi")}</span>
                 <span>{volume}%</span>
               </div>
               <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
@@ -333,14 +329,14 @@ export default function SettingsTab() {
 
             <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-primary)' }}>Kendimi Duy (Loopback)</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-primary)' }}>{t("Kendimi Duy (Loopback)")}</span>
                 <button onClick={() => toggleSetting('micLoopback')} className="toggle-btn" style={{ background: settings.micLoopback ? 'var(--accent-purple)' : 'rgba(255,255,255,0.1)', padding: '4px 12px', fontSize: '10px' }}>
-                  {settings.micLoopback ? 'AÇIK' : 'KAPALI'}
+                  {settings.micLoopback ? t("AÇIK") : t("KAPALI")}
                 </button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-primary)' }}>
-                  <span>Mikrofon Ses Gücü (Gain)</span>
+                  <span>{t("Mikrofon Ses Gücü (Gain)")}</span>
                   <span>{settings.micGain !== undefined ? settings.micGain : 100}%</span>
                 </div>
                 <input 
@@ -355,21 +351,21 @@ export default function SettingsTab() {
           </div>
 
           <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <h4 style={{ margin: '0 0 6px 0', fontSize: '12px' }}>Çıkış Cihazı (Hoparlör)</h4>
+            <h4 style={{ margin: '0 0 6px 0', fontSize: '12px' }}>{t("Çıkış Cihazı (Hoparlör)")}</h4>
             <select 
               value={settings.speakerDeviceId} 
               onChange={e => updateDevice('speakerDeviceId', e.target.value)}
               style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', fontSize: '11px', outline: 'none', marginBottom: '10px' }}
             >
-              <option value="default">Sistem Varsayılanı</option>
+              <option value="default">{t("Sistem Varsayılanı")}</option>
               {devices.audiooutput.map(d => (
-                <option key={d.deviceId} value={d.deviceId}>{d.label || `Hoparlör (${d.deviceId.slice(0,5)})`}</option>
+                <option key={d.deviceId} value={d.deviceId}>{d.label || t('Hoparlör ({id})', { id: d.deviceId.slice(0,5) })}</option>
               ))}
             </select>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-primary)' }}>
-                <span>Ana Çıkış Sesi (Master Volume)</span>
+                <span>{t("Ana Çıkış Sesi (Master Volume)")}</span>
                 <span>{settings.masterVolume !== undefined ? settings.masterVolume : 100}%</span>
               </div>
               <input 
@@ -387,22 +383,21 @@ export default function SettingsTab() {
         {/* AKILLI SES EŞİĞİ (NOISE GATE) */}
         <div>
           <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: 'var(--text-primary)' }}>
-            <i className="fas fa-filter" style={{ marginRight: '6px' }}></i> Akıllı Ses Eşiği (Noise Gate)
-          </h3>
+            <i className="fas fa-filter" style={{ marginRight: '6px' }}></i>{t(" Akıllı Ses Eşiği (Noise Gate) ")}</h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {/* Açma/Kapama */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '10px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div>
-                <h4 style={{ margin: '0 0 2px 0', fontSize: '12px' }}>Ses Eşiği Filtresi</h4>
-                <p style={{ margin: 0, fontSize: '10px', color: 'var(--text-muted)' }}>Belirli sesin altında kalan sesi keser. Nefes, tıklatma gibi sesleri filtreler.</p>
+                <h4 style={{ margin: '0 0 2px 0', fontSize: '12px' }}>{t("Ses Eşiği Filtresi")}</h4>
+                <p style={{ margin: 0, fontSize: '10px', color: 'var(--text-muted)' }}>{t("Belirli sesin altında kalan sesi keser. Nefes, tıklatma gibi sesleri filtreler.")}</p>
               </div>
               <button
                 onClick={() => toggleSetting('noiseGate')}
                 className="toggle-btn"
                 style={{ background: settings.noiseGate ? 'var(--accent-purple)' : 'rgba(255,255,255,0.1)', flexShrink: 0, marginLeft: '10px' }}
               >
-                {settings.noiseGate ? 'AÇIK' : 'KAPALI'}
+                {settings.noiseGate ? t("AÇIK") : t("KAPALI")}
               </button>
             </div>
 
@@ -411,15 +406,15 @@ export default function SettingsTab() {
                 {/* Otomatik Mod */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <span style={{ fontSize: '11px', color: 'var(--text-primary)', fontWeight: 'bold' }}>Otomatik Eşik</span>
-                    <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: 'var(--text-muted)' }}>Arka plan sessizliğini ölçerek eşiği otomatik ayarlar.</p>
+                    <span style={{ fontSize: '11px', color: 'var(--text-primary)', fontWeight: 'bold' }}>{t("Otomatik Eşik")}</span>
+                    <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: 'var(--text-muted)' }}>{t("Arka plan sessizliğini ölçerek eşiği otomatik ayarlar.")}</p>
                   </div>
                   <button
                     onClick={() => toggleSetting('autoGate')}
                     className="toggle-btn"
                     style={{ background: settings.autoGate ? '#00d4aa' : 'rgba(255,255,255,0.1)', flexShrink: 0, marginLeft: '10px' }}
                   >
-                    {settings.autoGate ? 'AÇIK' : 'KAPALI'}
+                    {settings.autoGate ? t("AÇIK") : t("KAPALI")}
                   </button>
                 </div>
 
@@ -427,7 +422,7 @@ export default function SettingsTab() {
                 {!settings.autoGate && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-                      <span style={{ color: 'var(--text-primary)' }}>Manuel Eşik Seviyesi</span>
+                      <span style={{ color: 'var(--text-primary)' }}>{t("Manuel Eşik Seviyesi")}</span>
                       <span style={{ color: 'var(--accent-purple)', fontWeight: 'bold' }}>{settings.gateThreshold}</span>
                     </div>
                     <input
@@ -438,8 +433,8 @@ export default function SettingsTab() {
                       style={{ width: '100%', accentColor: 'var(--accent-purple)' }}
                     />
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--text-muted)' }}>
-                      <span>Hassas (1) — Az keser</span>
-                      <span>Agresif (40) — Çok keser</span>
+                      <span>{t("Hassas (1) — Az keser")}</span>
+                      <span>{t("Agresif (40) — Çok keser")}</span>
                     </div>
                   </div>
                 )}
@@ -451,20 +446,19 @@ export default function SettingsTab() {
         {/* BAS-KONUŞ (PTT) */}
         <div>
           <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: 'var(--text-primary)' }}>
-            <i className="fas fa-hand-pointer" style={{ marginRight: '6px' }}></i> Bas-Konuş (Push-to-Talk)
-          </h3>
+            <i className="fas fa-hand-pointer" style={{ marginRight: '6px' }}></i>{t(" Bas-Konuş (Push-to-Talk) ")}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '10px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div>
-                <h4 style={{ margin: '0 0 2px 0', fontSize: '12px' }}>Bas-Konuş Modu</h4>
-                <p style={{ margin: 0, fontSize: '10px', color: 'var(--text-muted)' }}>Sadece tuşa basılıyken mikrofon açılır. En etkili gürültü çözümü.</p>
+                <h4 style={{ margin: '0 0 2px 0', fontSize: '12px' }}>{t("Bas-Konuş Modu")}</h4>
+                <p style={{ margin: 0, fontSize: '10px', color: 'var(--text-muted)' }}>{t("Sadece tuşa basılıyken mikrofon açılır. En etkili gürültü çözümü.")}</p>
               </div>
               <button
                 onClick={() => toggleSetting('pttEnabled')}
                 className="toggle-btn"
                 style={{ background: settings.pttEnabled ? 'var(--accent-purple)' : 'rgba(255,255,255,0.1)', flexShrink: 0, marginLeft: '10px' }}
               >
-                {settings.pttEnabled ? 'AÇIK' : 'KAPALI'}
+                {settings.pttEnabled ? t("AÇIK") : t("KAPALI")}
               </button>
             </div>
 

@@ -1,51 +1,53 @@
-# İstemci derleme
+# Build the desktop client
 
-Node.js 22.12+ ve npm gerekir. Varsayılan genel paket bağlantı bilgisini uygulamada ister; isteğe bağlı **Hazır bağlantı** yalnız özel dağıtım içindir.
+Use Node.js **22.12+**, npm and the lockfiles in this repository. Build output is written to `client/dist-electron/`.
 
-## Derleme sihirbazı
+## Build wizard
 
-Proje dizininde `bash xantum.sh` → **2** veya `bash scripts/build-client.sh` çalıştırın.
+```bash
+bash xantum.sh
+```
 
-| Seçenek | Davranış | Çıktı |
-| --- | --- | --- |
-| Uygulamada yapılandır | Genel pakete IP veya anahtar eklenmez; kullanıcı uygulamada bir kez kaydeder | `client/dist-electron/` |
-| Hazır bağlantı | IP/alan adı, gizli anahtar girişi ve isteğe bağlı portlar bu pakete eklenir; ilk kullanımda ayarlar hazır gelir | `client/dist-electron/private/` |
+Choose **2**, then Windows or Linux. Select:
 
-Hazır bağlantının anahtarı paket içinden çıkarılabilir; bu bir gizli anahtar kasası değildir. Paketi yalnız yetkilendirdiğiniz kişilerle paylaşın. Genel GitHub sürümüne koymayın. Bilgiler kaynak `config.json` dosyasına yazılmaz; izinleri 600 olan geçici profil, işlem sonunda temizlenir. Kayıtlı kullanıcı ayarları paket yükseltmesinde değişmez. “Bağlantıyı düzenle” ile sonradan değiştirilebilir.
+- **Public package:** no server address or access key is included.
+- **Preconfigured connection:** enter your own address and key for a private package. Anyone with that package can extract the key; do not upload it publicly.
 
-Sihirbaz platformu seçtirir, gerekli native bileşeni derler/kontrol eder ve isteğe bağlı önizleme açar. Sistem paketlerini, sudoers veya ağ ayarlarını değiştirmez. Windows için önceden hazırlanmış helper/DLL ve Wine ya da çalışan Docker gerekir. Doğrudan aşağıdaki npm komutlarıyla yapılan derlemeler varsayılan olarak genel pakettir; özel profil yalnız `XANTUM_CONNECTION_PROFILE` ile açıkça seçilir.
+The wizard prepares or checks native components, runs validation and packages the app. Windows packaging on Linux needs Wine or a working Docker setup.
 
-## Kaynak doğrulama
+## Install dependencies and check sources
 
 ```bash
 npm ci --prefix client
 npm ci --prefix server/xantum-server/backend
 npm test --prefix client
-npm test --prefix development/selective-vpn
 npm run build:ui --prefix client
 ```
 
-Linux'ta testler GCC ve Linux geliştirme başlıklarını da gerektirir. Native testler gerçek kaynağı `_FORTIFY_SOURCE=2` ve `3` ile derler; paket yazma, kesik frame, hata çıkışı ve sahipli rota temizliğini ağ komutlarını taklit ederek sınar. Yetki veya host ağ değişikliği gerekmez. Entegrasyon testleri geçici localhost portları açar.
+Tests open temporary localhost connections. Linux native checks require GCC and development headers. These checks do not replace connection tests on the target operating system.
 
 ## Linux x64
 
+GCC is needed to compile the TUN helper:
+
 ```bash
 mkdir -p client/bin
-gcc -Wall -Wextra -Werror -O2 -D_FORTIFY_SOURCE=2 -o client/bin/xtp-tun-helper server/xantum-server/xtp-tun.c
+gcc -Wall -Wextra -Werror -O2 -D_FORTIFY_SOURCE=2 \
+  -o client/bin/xtp-tun-helper server/xantum-server/xtp-tun.c
 npm run build:linux --prefix client
 ```
 
-Çıktı: `client/dist-electron/`. Debian paketinin kurulum kancası root sahipli TUN/koruma yardımcılarını ve polkit ilkesini kurar; kaldırma kancası önce sahipli koruma oturumunu temizler. Geliştirme veya AppImage ile ilk bağlantıda yardımcılar yönetici onayıyla hazırlanır; ayrı “Korumayı kur” düğmesi isteğe bağlıdır. Terminal alternatifi:
+The Debian installer installs the protected helpers and polkit policy. AppImage/source installations prepare missing helpers on the first connection with administrator approval. The manual alternative is:
 
 ```bash
 sudo bash client/native/install-linux-helpers.sh
 ```
 
-Bu komut yardımcı kurulumu yapar; VPN veya firewall açmaz. Electron'u root çalıştırmayın. `nftables`, `python3`, `iproute2`, `pkexec/polkit` gerekir. Temiz sistemde paket kancalarının çalışması [yayın kontrolünde](GELISTIRME-PLANI.md) ayrıca doğrulanır.
+Runtime requirements include Python 3, nftables, iproute2 and pkexec/polkit. Helper installation does not start a VPN connection. Run the desktop app as your normal user.
 
 ## Windows x64
 
-Linux'ta MinGW-w64 ile helper derlenebilir:
+With MinGW-w64 on Linux:
 
 ```bash
 x86_64-w64-mingw32-gcc -Wall -Wextra -Werror -O2 \
@@ -53,29 +55,20 @@ x86_64-w64-mingw32-gcc -Wall -Wextra -Werror -O2 \
   -lws2_32 -liphlpapi -lole32 -lfwpuclnt -ladvapi32 -static -static-libgcc
 ```
 
-Resmî [Wintun dağıtımından](https://www.wintun.net/) AMD64 `wintun.dll` ve dağıtım lisanslarını edinin. Binary bütünlüğü ve dağıtım hakları yayın öncesi kontrol edilir; depoda rastgele DLL tutulmaz. `scripts/compile-win-tun.sh` indirme ve derlemeyi otomatikleştirir, eksik araçları kurmaya çalışabilir; çalıştırmadan önce okuyun.
+Place the AMD64 `wintun.dll` and its distribution license from the [official Wintun package](https://www.wintun.net/) in `client/bin/`. Wintun provides the virtual adapter; it does not require the WireGuard protocol or application.
 
 ```bash
 npm run build:win --prefix client
 ```
 
-Windows NSIS paketlemesi tercihen Windows makinesinde yapılır. Linux çapraz paketlemede Wine gerekebilir. Wintun kullanmak WireGuard protokolü kullanmak değildir. Installer WireGuard MSI kurmaz. Helper veya DLL eksikse `beforePack` doğrulaması paketlemeyi durdurur.
+Windows is recommended for NSIS packaging; Linux cross-packaging needs Wine or Docker. Packaging stops if a required helper or DLL is missing.
 
-## Dağıtım kuralları
+## UI development
 
-- Genel pakete `config.json`, `.env`, token, PEM/key dosyaları ve loglar konmaz. Hazır bağlantılı özel paket, açıkça seçilen katılım anahtarını içerir ve GitHub'a yüklenmez.
-- `development/` ve test sunucuları istemci paketinde yoktur.
-- Helper binary'leri kaynaktan yeniden derlenmeli; eski `client/bin` çıktısına güvenilmemeli.
-- Her iki platformda gerçek temiz kurulum/kaldırma, bağlantı ve kesinti testleri gerekir.
-- Üretim binary'leri imzalanmalı; SHA-256 özetleri, sürüm notu ve kullanılan kaynak commit'i release'e eklenmeli.
-- Kaynak deponun kök lisans seçimi henüz belirlenmemiştir; bir lisans varsayılıp eklenmedi.
+```bash
+npm run dev --prefix client
+```
 
-## Bağımlılık güvenliği
+For a browser-only preview, use `npm run dev:ui --prefix client`. A browser preview cannot create a VPN or save Electron server settings. A real connection requires the native helper, OS permission and a configured server.
 
-Bağımlılık sürümleri kilit dosyalarında tutulur; denetim ve güncelleme işleri [geliştirme planında](GELISTIRME-PLANI.md) izlenir. Kilit dosyasını kullanın; audit fix --force ile eski bir paketleyiciye dönmeyin.
-
-## Parola ve yönetici onayı
-
-Linux deb paketi kurulum sırasında yardımcıları da kurar; uygulamada ayrı kurulum adımı yoktur. AppImage/kaynak çalıştırmada ilk bağlantı bu hazırlığı yapar. İlk yardımcı kurulumu ile bağlantı yetkisi ayrı işlemler olduğundan ilk kullanımda iki onay görülebilir. Ağ koruması onayı, dar kapsamlı TUN eylemini polkit `imply` ile kapsar; geçici onay geçerliyken aynı bağlantının ikinci TUN parolası hedeflenmez. Süre ve tekrar isteme davranışını sistemin polkit ilkesi belirler; kalıcı parolasız root yetkisi verilmez. Gerçek masaüstünde doğrulanmalıdır.
-
-Windows paketi yönetici kurulumu ve uygulama açılışında UAC kullanır; ayrı “Korumayı kur” akışı yoktur. Linux'ta üretilen NSIS paketi gerçek Windows testi yerine geçmez. NSIS çapraz derleme araçları Türkçe harf dönüşümünden etkilenebildiği için derleme çocuk süreçleri `C.UTF-8` yerel ayarıyla çalışır; Unicode proje yolları korunur.
+Keep public artifacts free of keys, profiles, `.env` files and logs. Test installation, connection, disconnection and recovery on each supported OS before distributing a package.

@@ -1,0 +1,7 @@
+.language-selector { -webkit-app-region: no-drag; display: inline-flex; gap: 6px; align-items: center; margin-inline-end: 10px; padding-inline-start: 8px; color: #c5cfe2; }
+.language-selector i { font-size: 12px; pointer-events: none; }
+.language-selector select { -webkit-app-region: no-drag; max-width: 100px; min-height: 30px; padding: 4px 6px; font: inherit; font-size: 12px; color: #eef3ff; background: #192337; border: 1px solid #42516b; border-radius: 6px; cursor: pointer; }
+.language-selector select:hover { background: #25334b; }
+.language-selector select:focus-visible { outline: 2px solid #79e4d4; outline-offset: 2px; }
+.language-selector option { color: #eef3ff; background: #192337; }
+@media (max-width: 480px) { .language-selector { margin-inline-end: 4px; gap: 3px; padding-inline-start: 0; } .language-selector select { max-width: 85px; } }

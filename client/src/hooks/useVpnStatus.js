@@ -1,8 +1,10 @@
+import { t, useLocale } from '../i18n/useLocale.jsx'
 import { useState, useEffect, useCallback, useRef } from 'react'
 
 const API = window.electronAPI?.vpn
 
 export function useVpnStatus() {
+  useLocale()
   const [status, setStatus] = useState({
     connected: false,
     ready: false,
@@ -28,7 +30,7 @@ export function useVpnStatus() {
   }, [])
 
   useEffect(() => window.electronAPI?.onVpnDisconnected?.(() => {
-    setStatus(prev => ({ ...prev, connected: false, connecting: false, interface: null, error: 'VPN bağlantısı kesildi.' }))
+    setStatus(prev => ({ ...prev, connected: false, connecting: false, interface: null, error: t("VPN bağlantısı kesildi.") }))
   }), [])
 
 
@@ -89,14 +91,14 @@ export function useVpnStatus() {
         setStatus(prev => ({
           ...prev,
           connecting: false,
-          error: result?.error || 'Bağlantı kurulamadı',
+          error: result?.error || t("Bağlantı kurulamadı"),
         }))
       }
     } catch (e) {
       setStatus(prev => ({
         ...prev,
         connecting: false,
-        error: e.message || 'Beklenmeyen hata',
+        error: e.message || t("Beklenmeyen hata"),
       }))
     }
   }, [ipInfo, refreshIpInfo])
@@ -120,7 +122,7 @@ export function useVpnStatus() {
         setStatus(prev => ({
           ...prev,
           connecting: false,
-          error: result?.error || 'Bağlantı kesilemedi',
+          error: result?.error || t("Bağlantı kesilemedi"),
         }))
       }
     } catch (e) {
@@ -145,7 +147,7 @@ export function useVpnStatus() {
   const installHelpers = useCallback(async () => {
     const result = await API?.installHelpers?.()
     if (result?.protection) setStatus(prev => ({ ...prev, protection: result.protection, error: null }))
-    return result || { success: false, error: 'Koruma kurulumu Xantum masaüstü uygulamasında yapılabilir.' }
+    return result || { success: false, error: t("Koruma kurulumu Xantum masaüstü uygulamasında yapılabilir.") }
   }, [])
 
   /* publicIp: geriye dönük uyumluluk için sadece IP string'i */

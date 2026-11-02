@@ -1,4 +1,7 @@
+import { t, useLocale } from './i18n/useLocale.jsx'
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import LanguageSelector from './components/LanguageSelector.jsx'
+import { connectDesktopLocale } from './i18n/core.mjs'
 import logoImg from './assets/logo.png'
 import ConnectionButton from './components/ConnectionButton.jsx'
 import StatusPanel from './components/StatusPanel.jsx'
@@ -13,11 +16,13 @@ import { useNetworkStats } from './hooks/useNetworkStats.js'
 const API = window.electronAPI
 
 export default function App() {
+  const { locale, numberLocale } = useLocale()
   const [activeTab, setActiveTab] = useState('home')
   const [selectedConfig, setSelectedConfig] = useState(null)
   const [error, setError] = useState(null)
   const [registering, setRegistering] = useState(false)
   const toggleBusy = useRef(false)
+  useEffect(() => connectDesktopLocale(), [])
 
   const { status, publicIp, ipInfo, prevIp, connect, disconnect, checkProtection, releaseProtection, installHelpers } = useVpnStatus()
   const stats = useNetworkStats(status.connected, status.interface)
@@ -47,7 +52,7 @@ export default function App() {
   }, [status.error])
 
   const handleToggle = useCallback(async () => {
-    if (!API) { setError('VPN bağlantısı için Xantum masaüstü uygulamasını açın.'); return }
+    if (!API) { setError(t("VPN bağlantısı için Xantum masaüstü uygulamasını açın.")); return }
     if (status.connecting || toggleBusy.current) return
     toggleBusy.current = true
     setRegistering(true)
@@ -56,26 +61,26 @@ export default function App() {
         await disconnect()
       } else {
         if (status.protection?.setupRequired) {
-          setError('İlk bağlantı için yönetici onayı bekleniyor…')
+          setError(t("İlk bağlantı için yönetici onayı bekleniyor…"))
           const setup = await installHelpers()
-          if (!setup?.success) { setError(setup?.error || 'Ağ yardımcıları kurulamadı. Yeniden deneyebilirsin.'); return }
+          if (!setup?.success) { setError(setup?.error || t("Ağ yardımcıları kurulamadı. Yeniden deneyebilirsin.")); return }
           if (setup.protection?.active || setup.protection?.state === 'unknown') {
-            setError('Kurulum tamamlandı. Önceki koruma oturumunu “Durumu denetle” ile kontrol et.'); return
+            setError(t("Kurulum tamamlandı. Önceki koruma oturumunu “Durumu denetle” ile kontrol et.")); return
           }
           setError(null)
         }
         if (!selectedConfig) {
           // Otomatik kayıt (API üzerinden) dene
-          setError('Sunucuya bağlanılıyor...')
+          setError(t("Sunucuya bağlanılıyor..."))
           try {
             const res = await API.autoRegisterVPN()
             if (res.success) {
               // Otomatik oluşturulan config'i seç ve bağlan
-              setSelectedConfig({ name: 'Otomatik Config', path: res.configPath })
+              setSelectedConfig({ name: t("Otomatik Config"), path: res.configPath })
               await connect(res.configPath)
             } else {
               API?.log('error', `Otomatik kayıt başarısız: ${res.error}`)
-              setError(res.error || 'Otomatik kayıt başarısız oldu.')
+              setError(res.error || t("Otomatik kayıt başarısız oldu."))
             }
           } catch (e) {
             API?.log('error', `Ağ hatası: ${e.message}`)
@@ -86,7 +91,7 @@ export default function App() {
         await connect(selectedConfig.path)
       }
     } catch (failure) {
-      setError(failure.message || 'Bağlantı hazırlığı tamamlanamadı. Yeniden deneyebilirsin.')
+      setError(failure.message || t("Bağlantı hazırlığı tamamlanamadı. Yeniden deneyebilirsin."))
     } finally { toggleBusy.current = false; setRegistering(false) }
   }, [status, selectedConfig, connect, disconnect, installHelpers])
 
@@ -124,35 +129,36 @@ export default function App() {
             <button
               className={`titlebar-tab-btn ${activeTab === 'home' ? 'active' : ''}`}
               onClick={() => setActiveTab('home')}
-              title="Ana Sayfa" aria-label="Ana Sayfa"
+              title={t("Ana Sayfa")} aria-label={t("Ana Sayfa")}
             >
               <span className="titlebar-tab-icon"><i className="fas fa-home"></i></span>
-              <span className="titlebar-tab-text">Ana Sayfa</span>
+              <span className="titlebar-tab-text">{t("Ana Sayfa")}</span>
             </button>
             <button
               className={`titlebar-tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
               onClick={() => setActiveTab('settings')}
-              title="Ayarlar" aria-label="Ayarlar"
+              title={t("Ayarlar")} aria-label={t("Ayarlar")}
             >
               <span className="titlebar-tab-icon"><i className="fas fa-cog"></i></span>
-              <span className="titlebar-tab-text">Ayarlar</span>
+              <span className="titlebar-tab-text">{t("Ayarlar")}</span>
             </button>
             <button
               className={`titlebar-tab-btn ${activeTab === 'chat' ? 'active' : ''}`}
               onClick={() => setActiveTab('chat')}
-              title="Sohbet & Ağ" aria-label="Sohbet"
+              title={t("Sohbet & Ağ")} aria-label={t("Sohbet")}
             >
               <span className="titlebar-tab-icon"><i className="fas fa-comment-dots"></i></span>
-              <span className="titlebar-tab-text">Sohbet</span>
+              <span className="titlebar-tab-text">{t("Sohbet")}</span>
             </button>
           </div>
           
           <div className="titlebar-controls">
+            <LanguageSelector />
             <button
               id="minimize-btn"
               className="titlebar-btn"
               onClick={() => API?.window.minimize()}
-              title="Küçült"
+              title={t("Küçült")}
             >
               ─
             </button>
@@ -160,7 +166,7 @@ export default function App() {
               id="close-btn"
               className="titlebar-btn close"
               onClick={() => API?.window.close()}
-              title="Tray'e gönder"
+              title={t("Tray'e gönder")}
             >
               ✕
             </button>
@@ -174,7 +180,7 @@ export default function App() {
           {error && (
             <div className="alert alert-error">
               <span>⚠️</span>
-              <span>{error}</span>
+              <span>{t(error)}</span>
             </div>
           )}
 
@@ -253,7 +259,7 @@ export default function App() {
               boxShadow: status.connected ? '0 0 6px #00d4aa' : 'none',
             }} />
             <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-              {status.connected ? 'XTP bağlı' : status.protection?.active ? 'Trafik kilitli' : 'Bağlantı kapalı'}
+              {status.connected ? t("XTP bağlı") : status.protection?.active ? t("Trafik kilitli") : t("Bağlantı kapalı")}
             </span>
           </div>
         </div>

@@ -1,8 +1,8 @@
-# Özel Dosyalar (Asla Github'a yüklenmemeli)
+# Private configuration
 client/config.json
 server/xantum-server/backend/.env
 
-# Klasörler
+# Dependencies and generated output
 node_modules/
 dist/
 dist-electron/
@@ -13,7 +13,7 @@ dist-electron/
 *.sqlite
 *.sqlite3
 
-# OS Mac
+# OS metadata
 .DS_Store
 
 # Credentials and generated native/release output
@@ -53,7 +53,7 @@ connection-profile.*.json
 *.tar.gz
 *.sha256
 
-# Local planning, audit dumps and scratch material
+# Private local planning and audit material (retained locally)
 /task.md
 /DESIGN.md
 /docs/private/

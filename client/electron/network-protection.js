@@ -1,4 +1,5 @@
 'use strict'
+const { t, translateError, localizeResult } = require('./localization')
 
 const fs = require('node:fs')
 const path = require('node:path')
@@ -12,8 +13,8 @@ const LINUX_POLICY = '/usr/share/polkit-1/actions/org.xantum.helpers.policy'
 const SETUP_MESSAGE = 'Linux ağ koruması kurulumu gerekli. Uygulamadaki “Korumayı kur” düğmesine basıp yönetici onayını verin.'
 
 function setupError(cause) {
-  const error = new Error(SETUP_MESSAGE, { cause })
-  error.code = 'XANTUM_SETUP_REQUIRED'; error.setupRequired = true; error.setupError = SETUP_MESSAGE
+  const error = new Error(t(SETUP_MESSAGE), { cause })
+  error.code = 'XANTUM_SETUP_REQUIRED'; error.setupRequired = true; error.setupError = t(SETUP_MESSAGE)
   return error
 }
 
@@ -26,8 +27,8 @@ function packagedResources() {
 
 function execute(file, args) {
   return new Promise((resolve, reject) => execFile(file, args, { timeout: 30000, maxBuffer: 128 * 1024, windowsHide: true }, (error, stdout, stderr) => {
-    if (error) { error.message = String(stderr || error.message).trim(); reject(error); return }
-    try { resolve(JSON.parse(stdout)) } catch { reject(new Error('Ağ koruması yardımcısı geçersiz yanıt verdi.')) }
+    if (error) { error.message = translateError(String(stderr || error.message).trim()); reject(error); return }
+    try { resolve(JSON.parse(stdout)) } catch { reject(new Error(t('Ağ koruması yardımcısı geçersiz yanıt verdi.'))) }
   }))
 }
 
@@ -36,7 +37,7 @@ function trustedLinuxHelper(file, stat = fs.lstatSync) {
   let current = file
   while (true) {
     const entry = stat(current)
-    if (entry.isSymbolicLink() || entry.uid !== 0 || (entry.mode & 0o022)) throw new Error('Linux ağ yardımcısı ve üst klasörleri root sahipli ve yazmaya kapalı olmalı.')
+    if (entry.isSymbolicLink() || entry.uid !== 0 || (entry.mode & 0o022)) throw new Error(t('Linux ağ yardımcısı ve üst klasörleri root sahipli ve yazmaya kapalı olmalı.'))
     if (current === '/') break
     current = path.dirname(current)
   }
@@ -57,14 +58,14 @@ class SystemProtectionAdapter {
       trustedLinuxHelper(LINUX_POLICY, this.stat)
       const policy = this.readFile(LINUX_POLICY, 'utf8')
       if (!/<annotate\s+key=["']org\.freedesktop\.policykit\.imply["']>\s*org\.xantum\.tun\s*<\/annotate>/.test(policy)) {
-        throw new Error('Linux yardımcılarının yetki ilkesi güncellenmeli.')
+        throw new Error(t('Linux yardımcılarının yetki ilkesi güncellenmeli.'))
       }
       return null
     } catch (error) { return setupError(error) }
   }
 
   async installHelpers() {
-    if (this.platform !== 'linux') throw new Error('Bu işletim sisteminde ayrı Linux yardımcı kurulumu gerekmiyor.')
+    if (this.platform !== 'linux') throw new Error(t('Bu işletim sisteminde ayrı Linux yardımcı kurulumu gerekmiyor.'))
     await this.install({ resourcesPath: this.resourcesPath })
     const error = this.linuxSetupError()
     if (error) throw error
@@ -79,9 +80,9 @@ class SystemProtectionAdapter {
       try {
         const entry = this.stat(LINUX_STATE)
         journalExists = true
-        if (entry.isSymbolicLink() || entry.uid !== 0 || (entry.mode & 0o022)) throw new Error('Koruma durum dosyasının sahipliği geçersiz.')
+        if (entry.isSymbolicLink() || entry.uid !== 0 || (entry.mode & 0o022)) throw new Error(t('Koruma durum dosyasının sahipliği geçersiz.'))
         const saved = JSON.parse(this.readFile(LINUX_STATE, 'utf8'))
-        if (saved.version !== 1 || !net.isIPv4(saved.endpoint) || !Array.isArray(saved.ports)) throw new Error('Koruma durumu okunamadı.')
+        if (saved.version !== 1 || !net.isIPv4(saved.endpoint) || !Array.isArray(saved.ports)) throw new Error(t('Koruma durumu okunamadı.'))
         // The journal is deliberately conservative: an interrupted operation is locked until
         // the privileged helper verifies/reconciles it. No elevation dialog on app startup.
         return { active: true, blocked: true, verified: false, endpoint: saved.endpoint, ports: saved.ports, ...setup }
@@ -93,7 +94,7 @@ class SystemProtectionAdapter {
       }
     }
     if (this.platform === 'win32') return this.run(this.windowsHelper, ['--protect', 'status'])
-    throw new Error('Ağ koruması bu işletim sistemini desteklemiyor.')
+    throw new Error(t('Ağ koruması bu işletim sistemini desteklemiyor.'))
   }
 
   async command(operation, config = {}) {
@@ -106,12 +107,12 @@ class SystemProtectionAdapter {
       const helper = path.join(LINUX_ROOT, 'network-protection-linux.py')
       try { return await this.run('/usr/bin/pkexec', [helper, ...args]) }
       catch (error) {
-        if (error.code === 'ENOENT') throw new Error('Yönetici onayı aracı bulunamadı. Dağıtımınızın pkexec/polkit paketini kurup yeniden deneyin.', { cause: error })
+        if (error.code === 'ENOENT') throw new Error(t('Yönetici onayı aracı bulunamadı. Dağıtımınızın pkexec/polkit paketini kurup yeniden deneyin.'), { cause: error })
         throw error
       }
     }
     if (this.platform === 'win32') return this.run(this.windowsHelper, ['--protect', ...args])
-    throw new Error('Ağ koruması bu işletim sistemini desteklemiyor.')
+    throw new Error(t('Ağ koruması bu işletim sistemini desteklemiyor.'))
   }
 }
 
@@ -121,7 +122,7 @@ class NetworkProtection {
     this.savedEndpoint = null; this.savedPorts = []
     this.state = { state: 'unknown', active: false, blocked: false, verified: false, error: null, setupRequired: false, setupError: null }
   }
-  getState() { return { ...this.state } }
+  getState() { return localizeResult({ ...this.state }) }
   settled() { return this.queue }
   _set(state) { this.state = { ...this.state, ...state }; this.onChange?.(this.getState()); return this.getState() }
   _serial(action) { const next = this.queue.then(action); this.queue = next.catch(() => {}); return next }
@@ -138,7 +139,7 @@ class NetworkProtection {
   }) }
   installHelpers() { return this._serial(async () => {
     try {
-      if (typeof this.adapter.installHelpers !== 'function') throw new Error('Yardımcı kurulumu bu platformda desteklenmiyor.')
+      if (typeof this.adapter.installHelpers !== 'function') throw new Error(t('Yardımcı kurulumu bu platformda desteklenmiyor.'))
       return this._accept(await this.adapter.installHelpers(), 'armed')
     } catch (error) {
       try { this._accept(await this.adapter.status(), 'armed') } catch (probeError) {
@@ -149,11 +150,11 @@ class NetworkProtection {
     }
   }) }
   arm({ endpoint, ports }) {
-    if (!net.isIPv4(endpoint) || !Array.isArray(ports) || !ports.length || ports.length > 4 || ports.some(port => !Number.isInteger(port) || port < 1 || port > 65535)) return Promise.reject(new Error('Geçersiz koruma hedefi.'))
+    if (!net.isIPv4(endpoint) || !Array.isArray(ports) || !ports.length || ports.length > 4 || ports.some(port => !Number.isInteger(port) || port < 1 || port > 65535)) return Promise.reject(new Error(t('Geçersiz koruma hedefi.')))
     return this._serial(async () => {
       try {
         const result = await this.adapter.command('arm', { endpoint, ports: [...new Set(ports)].sort((a, b) => a - b) })
-        if (!result.active || !result.verified) throw new Error('Ağ koruması doğrulanamadı; bağlantı başlatılmadı.')
+        if (!result.active || !result.verified) throw new Error(t('Ağ koruması doğrulanamadı; bağlantı başlatılmadı.'))
         this.savedEndpoint = endpoint
         return this._accept(result, 'armed')
       } catch (error) {
@@ -164,10 +165,10 @@ class NetworkProtection {
     })
   }
   bind(assignedIp) {
-    if (!/^10\.8\.0\.(?:[2-9]|[1-9]\d|1\d\d|2[0-4]\d|25[0-4])$/.test(assignedIp)) return Promise.reject(new Error('Geçersiz tünel adresi.'))
+    if (!/^10\.8\.0\.(?:[2-9]|[1-9]\d|1\d\d|2[0-4]\d|25[0-4])$/.test(assignedIp)) return Promise.reject(new Error(t('Geçersiz tünel adresi.')))
     return this._serial(async () => {
       const result = await this.adapter.command('bind', { assignedIp })
-      if (!result.active || !result.verified || result.blocked) throw new Error('Tünel koruması etkinleştirilemedi.')
+      if (!result.active || !result.verified || result.blocked) throw new Error(t('Tünel koruması etkinleştirilemedi.'))
       return this._accept(result, 'armed')
     })
   }
@@ -179,7 +180,7 @@ class NetworkProtection {
   release() { return this._serial(async () => {
     try {
       const result = await this.adapter.command('release')
-      if (result.active) throw new Error('Koruma kaldırılamadı; internet kilidi açık tutuldu.')
+      if (result.active) throw new Error(t('Koruma kaldırılamadı; internet kilidi açık tutuldu.'))
       this.savedEndpoint = null; this.savedPorts = []
       return this._accept(result, 'inactive')
     } catch (error) { this._set({ state: 'error', blocked: this.state.active, error: error.message }); throw error }

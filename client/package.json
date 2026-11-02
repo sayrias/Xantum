@@ -1,8 +1,8 @@
 {
   "name": "xantum",
   "version": "1.0.0",
-  "description": "Xantum — Kişisel XTP VPN Masaüstü Uygulaması",
-  "homepage": "https://github.com/sayrias/VPN-App",
+  "description": "Xantum — Self-hosted XTP VPN for Windows and Linux",
+  "homepage": "https://github.com/sayrias/Xantum",
   "main": "electron/main.js",
   "scripts": {
     "dev": "concurrently --kill-others-on-fail \"vite\" \"wait-on --timeout 30000 --interval 500 http://localhost:5173 && electron .\"",
@@ -50,7 +50,8 @@
       "!logs",
       "!*.log",
       "!**/.env",
-      "!dist-electron/**"
+      "!dist-electron/**",
+      "shared/**/*"
     ],
     "linux": {
       "target": [
@@ -69,7 +70,7 @@
       ],
       "category": "Network",
       "icon": "assets/logo_square.png",
-      "description": "Xantum — Kişisel XTP VPN Masaüstü Uygulaması",
+      "description": "Xantum — Self-hosted XTP VPN for Windows and Linux",
       "maintainer": "Xantum <support@xantum.app>",
       "extraResources": [
         {

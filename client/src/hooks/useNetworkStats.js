@@ -5,22 +5,22 @@ const API = window.electronAPI
 /**
  * Baytları okunabilir formata çevir
  */
-export function formatBytes(bytes) {
+export function formatBytes(bytes, locale = 'en-US') {
   if (!bytes || bytes === 0) return { value: '0', unit: 'B' }
   const units = ['B', 'KB', 'MB', 'GB', 'TB']
   const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  const value = (bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0)
+  const value = (bytes / Math.pow(1024, i)).toLocaleString(locale, { minimumFractionDigits: i > 0 ? 1 : 0, maximumFractionDigits: i > 0 ? 1 : 0 })
   return { value, unit: units[i] }
 }
 
 /**
  * Hızı hesapla (bytes/saniye → KB/s, MB/s)
  */
-export function formatSpeed(bytesPerSec) {
+export function formatSpeed(bytesPerSec, locale = 'en-US') {
   if (!bytesPerSec || bytesPerSec <= 0) return { value: '0', unit: 'KB/s' }
-  if (bytesPerSec < 1024) return { value: bytesPerSec.toFixed(0), unit: 'B/s' }
-  if (bytesPerSec < 1024 * 1024) return { value: (bytesPerSec / 1024).toFixed(1), unit: 'KB/s' }
-  return { value: (bytesPerSec / (1024 * 1024)).toFixed(2), unit: 'MB/s' }
+  if (bytesPerSec < 1024) return { value: bytesPerSec.toLocaleString(locale, { maximumFractionDigits: 0 }), unit: 'B/s' }
+  if (bytesPerSec < 1024 * 1024) return { value: (bytesPerSec / 1024).toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }), unit: 'KB/s' }
+  return { value: (bytesPerSec / (1024 * 1024)).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), unit: 'MB/s' }
 }
 
 /**

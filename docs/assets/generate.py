@@ -38,11 +38,11 @@ hero = '''<rect x="1" y="1" width="1278" height="398" rx="24" fill="#070b14" str
 <path d="m17 22 21 23m0-23L17 45"/>
 </g>'''
 hero += outline('Xantum', 82, 'SemiBold', 140, 40, '#f0f4ff')
-hero += outline('Kendi sunucun.', 40, 'Medium', 64, 154, '#f0f4ff')
-hero += outline('Kendi bağlantın.', 40, 'Medium', 64, 204, '#f0f4ff')
+hero += outline('Your server.', 40, 'Medium', 64, 154, '#f0f4ff')
+hero += outline('Your connection.', 40, 'Medium', 64, 204, '#f0f4ff')
 hero += '''<g font-family="Inter, Noto Sans, sans-serif" font-size="18" fill="#b4c3d7">
-<text x="66" y="306">Windows + Linux</text><circle cx="263" cy="300" r="3" fill="#3ecfcf"/><text x="281" y="306">XTP altyapısı</text>
-<text x="66" y="356" font-size="16" fill="#a7a0ff">v1.0.0 hazırlanıyor</text>
+<text x="66" y="306">Windows + Linux</text><circle cx="263" cy="300" r="3" fill="#3ecfcf"/><text x="281" y="306">XTP transport</text>
+<text x="66" y="356" font-size="16" fill="#a7a0ff">Self-hosted VPN</text>
 </g>
 <g fill="none" stroke-linecap="round" stroke-linejoin="round">
 <path d="M790 274 850 274 950 122 1054 122 1150 274 1212 274" stroke="#23354e" stroke-width="22"/>
@@ -53,8 +53,8 @@ hero += '''<g font-family="Inter, Noto Sans, sans-serif" font-size="18" fill="#b
 <path d="M996 185h12m-12 10h12m-12 10h5" stroke="#b4c3d7" stroke-width="2"/>
 <path d="m897 188 10-15m192 28 10 15m-289-94h20m322 152h20" stroke="#f0f4ff" stroke-width="7"/>
 </g>
-<g font-family="Inter, Noto Sans, sans-serif" font-size="13" fill="#b4c3d7" letter-spacing="1.2"><text x="790" y="77">MASAÜSTÜ</text><text x="982" y="327">XTP</text><text x="1130" y="77">SUNUCUN</text></g>'''
-save('xantum-banner.svg',1280,400,'Xantum — Kendi sunucun. Kendi bağlantın.','Windows ve Linux için XTP altyapısı. v1.0.0 hazırlanıyor. Turkuaz ve mor bağlantı yolları masaüstü istemcisi ile kendi sunucunu birleştiriyor.',hero)
+<g font-family="Inter, Noto Sans, sans-serif" font-size="13" fill="#b4c3d7" letter-spacing="1.2"><text x="790" y="77">DESKTOP</text><text x="982" y="327">XTP</text><text x="1093" y="77">YOUR SERVER</text></g>'''
+save('xantum-banner.svg',1280,400,'Xantum — Your server. Your connection.','XTP transport for Windows and Linux. Self-hosted VPN. Turquoise and purple paths connect your desktop to your own server.',hero)
 
 icons = {
 'install': '<path d="M14 2v20m-8-8 8 8 8-8M3 25v6h22v-6"/>',
@@ -62,34 +62,34 @@ icons = {
 'releases': '<path d="m14 2 13 7v16l-13 7L1 25V9Zm0 14L1 9m13 7 13-7m-13 7v16M7 5l14 8"/>',
 'issues': '<path d="M28 14a13 13 0 0 1-13 13H8l-7 5V14A13 13 0 0 1 28 14Z"/><path d="M15 7v9m0 5h.1"/>'
 }
-buttons = [('install','Kurulum','#3ecfcf','#07151e'),('wiki','Wiki','#6c63ff','#ffffff'),('releases','Sürümler','#101b2e','#f0f4ff'),('issues','Hata / Öneri','#101b2e','#f0f4ff')]
+buttons = [('install','Setup','#3ecfcf','#07151e'),('wiki','Wiki','#6c63ff','#ffffff'),('releases','Downloads','#101b2e','#f0f4ff'),('issues','Issues','#101b2e','#f0f4ff')]
 for name,label,bg,fg in buttons:
     body = f'<rect x="1" y="1" width="350" height="102" rx="14" fill="{bg}" stroke="'+('#2e405b' if name in ['releases','issues'] else bg)+'" stroke-width="2"/>'
     body += f'<g transform="translate(28 36)" fill="none" stroke="{fg}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">{icons[name]}</g>'
     body += outline(label,28,'SemiBold',80,34,fg)
     body += f'<path d="M307 44l8 8-8 8m-9-8h17" stroke="{fg}" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
-    save('button-'+name+'.svg',352,104,label,label+' sayfasını aç.',body)
+    save('button-'+name+'.svg',352,104,label,'Open the '+label+' page.',body)
 
 # Deliberately a schematic: no screenshots or unverified connection values.
 body = '''<rect x="1" y="1" width="1278" height="254" rx="20" fill="#0d1526" stroke="#263449" stroke-width="2"/>
 <g fill="none" stroke="#3ecfcf" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M370 128h150m-11-8 11 8-11 8M838 128h148m-11-8 11 8-11 8"/></g>
 <g fill="#16243a"><rect x="56" y="70" width="312" height="116" rx="12"/><rect x="522" y="70" width="314" height="116" rx="12"/><rect x="988" y="70" width="236" height="116" rx="12"/></g>
-<g font-family="Inter, Noto Sans, sans-serif" text-anchor="middle" fill="#f0f4ff" font-size="25" font-weight="600"><text x="212" y="119">Masaüstü istemcisi</text><text x="679" y="119">Kendi Linux sunucun</text><text x="1106" y="119">İnternet</text></g>
-<g font-family="Inter, Noto Sans, sans-serif" text-anchor="middle" fill="#b4c3d7" font-size="18"><text x="212" y="151">Windows / Linux</text><text x="679" y="151">XTP + TUN + IPv4 NAT</text><text x="1106" y="151">Hedef servis</text><text x="445" y="99" fill="#3ecfcf">TLS / WSS</text><text x="912" y="99">Çıkış</text><text x="640" y="225" font-size="16">Şema, mimariyi gösterir. Gerçek koruma kapsamı yayın kontrol belgesinde izlenir.</text></g>'''
-save('xtp-flow.svg',1280,256,'XTP bağlantı akışı','Windows veya Linux istemcisi TLS ve WSS üzerinden kendi Linux sunucuna bağlanır. Sunucu TUN ve IPv4 NAT üzerinden internete çıkış sağlar. Şema gerçek cihaz testinin yerini tutmaz.',body)
+<g font-family="Inter, Noto Sans, sans-serif" text-anchor="middle" fill="#f0f4ff" font-size="25" font-weight="600"><text x="212" y="119">Desktop client</text><text x="679" y="119">Your Linux server</text><text x="1106" y="119">Internet</text></g>
+<g font-family="Inter, Noto Sans, sans-serif" text-anchor="middle" fill="#b4c3d7" font-size="18"><text x="212" y="151">Windows / Linux</text><text x="679" y="151">XTP VPN connection</text><text x="1106" y="151">Destination</text><text x="445" y="99" fill="#3ecfcf">TLS / WSS</text><text x="912" y="99">Exit</text><text x="640" y="225" font-size="16">Your desktop connects through your own server.</text></g>'''
+save('xtp-flow.svg',1280,256,'XTP connection flow','A Windows or Linux client connects through your own Linux server using TLS.',body)
 
 compact = '<rect x="1" y="1" width="638" height="538" rx="24" fill="#070b14" stroke="#263449" stroke-width="2"/>'
 compact += '<g transform="translate(44 45)" fill="none" stroke="#3ecfcf" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M25 0 48 11v20c0 13-9 23-23 29C11 54 2 44 2 31V11Z"/><path d="m15 21 20 22m0-22L15 43"/></g>'
 compact += outline('Xantum', 72, 'SemiBold', 112, 24, '#f0f4ff')
-compact += outline('Kendi sunucun.', 40, 'Medium', 44, 134, '#f0f4ff')
-compact += outline('Kendi bağlantın.', 40, 'Medium', 44, 184, '#f0f4ff')
-compact += '<g font-family="Inter, Noto Sans, sans-serif" font-size="21" fill="#b4c3d7"><text x="46" y="282">Windows + Linux</text><circle cx="265" cy="274" r="3" fill="#3ecfcf"/><text x="284" y="282">XTP altyapısı</text><text x="46" y="326" font-size="20" fill="#a7a0ff">v1.0.0 hazırlanıyor</text></g>'
+compact += outline('Your server.', 40, 'Medium', 44, 134, '#f0f4ff')
+compact += outline('Your connection.', 40, 'Medium', 44, 184, '#f0f4ff')
+compact += '<g font-family="Inter, Noto Sans, sans-serif" font-size="21" fill="#b4c3d7"><text x="46" y="282">Windows + Linux</text><circle cx="265" cy="274" r="3" fill="#3ecfcf"/><text x="284" y="282">XTP transport</text><text x="46" y="326" font-size="20" fill="#a7a0ff">Self-hosted VPN</text></g>'
 compact += '<path d="M44 355h552" stroke="#25344c"/><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M46 402h98l106 92h138l106-92h100M46 494h98l106-92h138l106 92h100" stroke="#23354e" stroke-width="18"/><path d="M46 402h98l106 92h138l106-92h100" stroke="#8c83ff" stroke-width="4"/><path d="M46 494h98l106-92h138l106 92h100" stroke="#3ecfcf" stroke-width="4"/><path d="M97 402h18m294 74 14-12m-183-53 14 12m283 71h18" stroke="#f0f4ff" stroke-width="6"/></g>'
-save('xantum-banner-compact.svg',640,540,'Xantum — Kendi sunucun. Kendi bağlantın.','Windows ve Linux için XTP altyapısı. v1.0.0 hazırlanıyor.',compact)
+save('xantum-banner-compact.svg',640,540,'Xantum — Your server. Your connection.','XTP transport for Windows and Linux. Self-hosted VPN.',compact)
 
 flow_compact = '<rect x="1" y="1" width="638" height="718" rx="20" fill="#0d1526" stroke="#263449" stroke-width="2"/>'
 flow_compact += '<g fill="#16243a"><rect x="44" y="40" width="552" height="132" rx="12"/><rect x="44" y="284" width="552" height="132" rx="12"/><rect x="44" y="528" width="552" height="132" rx="12"/></g>'
-flow_compact += '<g font-family="Inter, Noto Sans, sans-serif" text-anchor="middle" fill="#f0f4ff" font-size="30" font-weight="600"><text x="320" y="97">Masaüstü istemcisi</text><text x="320" y="341">Kendi Linux sunucun</text><text x="320" y="585">İnternet</text></g>'
-flow_compact += '<g font-family="Inter, Noto Sans, sans-serif" text-anchor="middle" fill="#b4c3d7" font-size="23"><text x="320" y="136">Windows / Linux</text><text x="320" y="380">XTP + TUN + IPv4 NAT</text><text x="320" y="624">Hedef servis</text><text x="425" y="236" fill="#3ecfcf">TLS / WSS</text><text x="397" y="480">Çıkış</text><text x="320" y="700" font-size="21">Mimari şema · Test kanıtı değildir</text></g>'
+flow_compact += '<g font-family="Inter, Noto Sans, sans-serif" text-anchor="middle" fill="#f0f4ff" font-size="30" font-weight="600"><text x="320" y="97">Desktop client</text><text x="320" y="341">Your Linux server</text><text x="320" y="585">Internet</text></g>'
+flow_compact += '<g font-family="Inter, Noto Sans, sans-serif" text-anchor="middle" fill="#b4c3d7" font-size="23"><text x="320" y="136">Windows / Linux</text><text x="320" y="380">XTP VPN connection</text><text x="320" y="624">Destination</text><text x="425" y="236" fill="#3ecfcf">TLS / WSS</text><text x="397" y="480">Exit</text><text x="320" y="700" font-size="21">Your server. Your connection.</text></g>'
 flow_compact += '<g fill="none" stroke="#3ecfcf" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M320 194v68m-10-11 10 11 10-11M320 438v68m-10-11 10 11 10-11"/></g>'
-save('xtp-flow-compact.svg',640,720,'XTP bağlantı akışı','Windows veya Linux istemcisi TLS ve WSS üzerinden kendi Linux sunucuna bağlanır. Sunucu TUN ve IPv4 NAT üzerinden internete çıkış sağlar. Mimari şemadır; gerçek cihaz testinin yerini tutmaz.',flow_compact)
+save('xtp-flow-compact.svg',640,720,'XTP connection flow','A Windows or Linux client connects through your own Linux server using TLS.',flow_compact)

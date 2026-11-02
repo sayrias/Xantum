@@ -1,6 +1,8 @@
+import { t, useLocale } from '../i18n/useLocale.jsx'
 import React, { useState, useEffect } from 'react';
 
 export default function FatalErrorModal() {
+  const { locale, numberLocale } = useLocale()
   const [error, setError] = useState(null); // { message, stack, logDir }
   const [logPath, setLogPath] = useState('');
   const [copied, setCopied] = useState(false);
@@ -66,10 +68,8 @@ export default function FatalErrorModal() {
             <i className="fas fa-exclamation-triangle" style={{ color: '#ff4757', fontSize: '18px' }}></i>
           </div>
           <div>
-            <h2 style={{ margin: 0, fontSize: '16px', color: '#ff4757' }}>Beklenmedik Hata</h2>
-            <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
-              Uygulamada kritik bir hata oluştu
-            </p>
+            <h2 style={{ margin: 0, fontSize: '16px', color: '#ff4757' }}>{t("Beklenmedik Hata")}</h2>
+            <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>{t(" Uygulamada kritik bir hata oluştu ")}</p>
           </div>
         </div>
 
@@ -84,7 +84,7 @@ export default function FatalErrorModal() {
           overflowY: 'auto'
         }}>
           <code style={{ fontSize: '11px', color: '#ff6b7a', fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-            {error.message}
+            {t(error.message)}
           </code>
         </div>
 
@@ -97,14 +97,12 @@ export default function FatalErrorModal() {
           marginBottom: '20px'
         }}>
           <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-            <i className="fas fa-folder" style={{ marginRight: '5px' }}></i>
-            Hata Günlüğü Konumu
-          </div>
+            <i className="fas fa-folder" style={{ marginRight: '5px' }}></i>{t(" Hata Günlüğü Konumu ")}</div>
           <code style={{
             fontSize: '11px', color: '#00d4aa', fontFamily: 'monospace',
             wordBreak: 'break-all', display: 'block'
           }}>
-            {logPath || 'Hesaplanıyor...'}
+            {logPath || t("Hesaplanıyor...")}
           </code>
         </div>
 
@@ -120,9 +118,7 @@ export default function FatalErrorModal() {
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
             }}
           >
-            <i className="fas fa-folder-open"></i>
-            Log Klasörünü Aç
-          </button>
+            <i className="fas fa-folder-open"></i>{t(" Log Klasörünü Aç ")}</button>
 
           <button
             onClick={copyError}
@@ -138,7 +134,7 @@ export default function FatalErrorModal() {
             }}
           >
             <i className={`fas ${copied ? 'fa-check' : 'fa-copy'}`}></i>
-            {copied ? 'Kopyalandı!' : 'Hatayı Kopyala'}
+            {copied ? t("Kopyalandı!") : t("Hatayı Kopyala")}
           </button>
 
           <button
@@ -150,14 +146,10 @@ export default function FatalErrorModal() {
               borderRadius: '8px', color: '#ff4757',
               fontWeight: 'bold', fontSize: '12px', cursor: 'pointer',
             }}
-          >
-            Kapat
-          </button>
+          >{t(" Kapat ")}</button>
         </div>
 
-        <p style={{ margin: '14px 0 0 0', fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center' }}>
-          Bu hatayı geliştirici ile paylaşmak için "Hatayı Kopyala" butonunu kullanabilirsiniz.
-        </p>
+        <p style={{ margin: '14px 0 0 0', fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center' }}>{t(" Bu hatayı geliştirici ile paylaşmak için \"Hatayı Kopyala\" butonunu kullanabilirsiniz. ")}</p>
       </div>
     </div>
   );

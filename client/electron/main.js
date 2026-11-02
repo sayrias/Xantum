@@ -1,3 +1,5 @@
+'use strict'
+const { t, setLanguage, getLanguage, translateError, localizeResult } = require('./localization')
 const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, dialog, shell } = require('electron')
 const path = require('path')
 const fs = require('fs')
@@ -32,7 +34,7 @@ process.on('uncaughtException', (err) => {
     const wins = BrowserWindow.getAllWindows()
     if (wins.length > 0) {
       wins[0].webContents.send('app:fatal-error', {
-        message: err.message,
+        message: translateError(err),
         stack: err.stack,
         logDir: crashDir
       })
@@ -96,12 +98,31 @@ if (process.platform === 'linux') {
 let mainWindow = null
 let tray = null
 
+// Language is loaded before creating any menus or user-facing errors.
+function settingsFile() { return path.join(app.getPath('userData'), 'settings.json') }
+function loadSettings() {
+  try { return fs.existsSync(settingsFile()) ? readConfig(settingsFile()) : {} }
+  catch { return {} }
+}
+setLanguage(loadSettings().locale === 'tr' ? 'tr' : 'en')
+function changeLanguage(locale) {
+  if (!['en', 'tr'].includes(locale)) throw new Error(t('Geçersiz dil seçimi.'))
+  writeConfig(settingsFile(), { ...loadSettings(), fullTunnel: true, locale })
+  setLanguage(locale)
+  app.trayManager?.updateTrayMenu(xtpClient.connected)
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('locale:changed', { locale })
+    mainWindow.webContents.send('vpn-protection-changed', localizeResult(xtpClient.protectionState))
+  }
+  return { locale }
+}
+
 // ---- VPN Durum Yönetimi (XTP tabanlı) ----
 let vpnConnectedTime = null
 const xtpClient = new XTPClient()
 
 xtpClient.onProtectionChange = status => {
-  try { mainWindow?.webContents.send('vpn-protection-changed', status) } catch {}
+  try { mainWindow?.webContents.send('vpn-protection-changed', localizeResult(status)) } catch {}
   app.trayManager?.updateTrayMenu(xtpClient.connected)
 }
 
@@ -218,8 +239,8 @@ function createTray() {
 
   const updateTrayMenu = (connected = false, locationLabel = '') => {
     const connLabel = connected
-      ? `Bağlı${locationLabel ? ' — ' + locationLabel : ''}`
-      : xtpClient.protectionState?.active ? 'Trafik koruması: internet kilitli' : 'Bağlantı kesildi'
+      ? `${t('Bağlı')}${locationLabel ? ' — ' + locationLabel : ''}`
+      : xtpClient.protectionState?.active ? t('Trafik koruması: internet kilitli') : t('Bağlantı kesildi')
 
     const contextMenu = Menu.buildFromTemplate([
       { label: 'Xantum', enabled: false },
@@ -227,33 +248,33 @@ function createTray() {
       { label: connLabel, enabled: false },
       { type: 'separator' },
       {
-        label: 'Aç',
+        label: t('Aç'),
         click: () => { mainWindow.show(); mainWindow.focus() }
       },
       {
-        label: connected ? 'Bağlantıyı Kes' : 'Bağlan',
+        label: connected ? t('Bağlantıyı Kes') : t('Bağlan'),
         click: () => {
           mainWindow.show()
           mainWindow.webContents.send('tray-toggle-vpn')
         }
       },
       {
-        label: 'Korumayı kaldır ve interneti geri aç',
+        label: t('Korumayı kaldır ve interneti geri aç'),
         visible: Boolean(xtpClient.protectionState?.active && !connected),
         click: async () => {
           try { await xtpClient.releaseProtection(); protectionReady = Promise.resolve(xtpClient.protectionState) }
-          catch (error) { dialog.showErrorBox('Koruma kaldırılamadı', error.message) }
+          catch (error) { dialog.showErrorBox(t('Koruma kaldırılamadı'), translateError(error)) }
         }
       },
       { type: 'separator' },
       {
-        label: 'Çıkış',
+        label: t('Çıkış'),
         click: () => { app.isQuitting = true; app.quit() }
       }
     ])
 
     tray.setContextMenu(contextMenu)
-    tray.setToolTip(connected ? 'Xantum — Bağlı' : xtpClient.protectionState?.active ? 'Xantum — İnternet koruma altında kilitli' : 'Xantum — Bağlantı kesildi')
+    tray.setToolTip(connected ? t('Xantum — Bağlı') : xtpClient.protectionState?.active ? t('Xantum — İnternet koruma altında kilitli') : t('Xantum — Bağlantı kesildi'))
   }
 
   updateTrayMenu(false)
@@ -307,9 +328,10 @@ const trustedSender = event => isTrustedFrame(event, mainWindow?.webContents, {
   isDev, indexPath: path.join(__dirname, '../dist/index.html'),
 })
 function handle(channel, callback) {
-  ipcMain.handle(channel, (event, ...args) => {
-    if (!trustedSender(event)) throw new Error('Yetkisiz uygulama isteği.')
-    return callback(event, ...args)
+  ipcMain.handle(channel, async (event, ...args) => {
+    if (!trustedSender(event)) throw new Error(t('Yetkisiz uygulama isteği.'))
+    try { return localizeResult(await callback(event, ...args)) }
+    catch (error) { error.message = translateError(error); throw error }
   })
 }
 function listen(channel, callback) {
@@ -320,10 +342,13 @@ function listen(channel, callback) {
 // IPC HANDLERS — UI ile iletişim
 // ============================================================
 
-handle('setup-server-ssh', async () => ({ success: false, error: 'Sunucu kurulumu için docs/KURULUM.md içindeki TLS ve SSH adımlarını kullanın.' }))
+handle('locale:get', () => ({ locale: getLanguage() }))
+handle('locale:set', (_, locale) => changeLanguage(locale))
+
+handle('setup-server-ssh', async () => ({ success: false, error: t('Sunucu kurulumu için docs/SETUP.md içindeki TLS ve SSH adımlarını kullanın.') }))
 
 handle('get-network-status', async (event) => {
-  if (!xtpClient.connected) return { error: "VPN bağlı değil" }
+  if (!xtpClient.connected) return { error: t('VPN bağlı değil') }
   try {
     return []
   } catch (e) {
@@ -347,13 +372,13 @@ handle('server-config:load', () => {
 handle('server-config:save', async (_, data) => {
   try {
     await protectionReady
-    if (xtpClient.protectionState?.active || xtpClient.protectionState?.state === 'unknown') throw new Error('Sunucuyu değiştirmeden önce trafik korumasını kaldırın.')
-    if (xtpClient.connected || xtpClient.connecting) throw new Error('Sunucuyu değiştirmeden önce VPN bağlantısını kesin.')
+    if (xtpClient.protectionState?.active || xtpClient.protectionState?.state === 'unknown') throw new Error(t('Sunucuyu değiştirmeden önce trafik korumasını kaldırın.'))
+    if (xtpClient.connected || xtpClient.connecting) throw new Error(t('Sunucuyu değiştirmeden önce VPN bağlantısını kesin.'))
     let existing
     try { existing = readServerConfig() } catch {}
-    if (!data || typeof data !== 'object') throw new Error('Geçersiz sunucu ayarları.')
+    if (!data || typeof data !== 'object') throw new Error(t('Geçersiz sunucu ayarları.'))
     let config = connectionConfig({ serverIp: data.serverIp, inviteToken: data.inviteToken || existing?.pin })
-    if (!data.inviteToken && existing?.serverIp !== config.serverIp) throw new Error('Yeni sunucu için katılım anahtarını girin.')
+    if (!data.inviteToken && existing?.serverIp !== config.serverIp) throw new Error(t('Yeni sunucu için katılım anahtarını girin.'))
     if (existing?.serverIp === config.serverIp) config = connectionConfig({ ...existing, pin: config.pin })
     writeConfig(path.join(app.getPath('userData'), 'server.json'), { ...config, profileOrigin: 'manual' })
     activeConnectionConfig = null
@@ -375,7 +400,7 @@ handle('auto-register-vpn', async () => {
       if (cached.protocol === 'xtp' && ['serverIp', 'pin', 'apiUrl', 'xtpUrl'].every(key => normalized[key] === appConfig[key])) {
         return { success: true, configPath: cachedPath }
       }
-      throw new Error('Koruma açıkken sunucu değiştirilemez. Önce internet erişimini geri açın.')
+      throw new Error(t('Koruma açıkken sunucu değiştirilemez. Önce internet erişimini geri açın.'))
     }
 
     // 2. Sunucuya kayıt isteği at — XTP bağlantı bilgilerini al
@@ -390,13 +415,13 @@ handle('auto-register-vpn', async () => {
     if (!res.ok) {
       const errData = await res.json()
       appLog('error', `Sunucu kayıt hatası: ${errData.error}`)
-      throw new Error(errData.error || 'Sunucu kayıt hatası')
+      throw new Error(translateError(errData.error || 'Sunucu kayıt hatası'))
     }
 
     const { config: responseConfig } = await res.json()
     const config = { ...responseConfig, ...appConfig }
     if (config.protocol !== 'xtp') {
-      throw new Error('Sunucu XTP protokolünü desteklemiyor. Lütfen sunucuyu güncelleyin.')
+      throw new Error(t('Sunucu XTP protokolünü desteklemiyor. Lütfen sunucuyu güncelleyin.'))
     }
 
     appLog('info', 'Sunucuya başarıyla kayıt olundu. XTP bağlantısı hazır.')
@@ -418,7 +443,7 @@ handle('vpn:connect', async (event, configPath) => {
     // configPath artık xtp-config.json yolu veya null (otomatik okur)
     const xtpConfigPath = configPath || path.join(app.getPath('userData'), 'xtp-config.json')
     if (!fs.existsSync(xtpConfigPath)) {
-      throw new Error('XTP config bulunamadı. Lütfen önce uygulamayı kurun (Bağlan butonuna tekrar basın).')
+      throw new Error(t('XTP config bulunamadı. Lütfen önce uygulamayı kurun (Bağlan butonuna tekrar basın).'))
     }
     const xtpConfig = readConfig(xtpConfigPath)
 
@@ -470,7 +495,7 @@ handle('vpn:protection:check', async () => {
 })
 handle('vpn:helpers:install', async () => {
   try {
-    if (xtpClient.connected || xtpClient.connecting) throw new Error('Koruma kurulumundan önce VPN bağlantısını kesin.')
+    if (xtpClient.connected || xtpClient.connecting) throw new Error(t('Koruma kurulumundan önce VPN bağlantısını kesin.'))
     const protection = await xtpClient.installHelpers()
     protectionReady = Promise.resolve(protection)
     return { success: true, protection }
@@ -508,34 +533,23 @@ handle('vpn:get-connected-time', () => {
 // Ayarlar kaydet/yükle (fullTunnel gibi electron-seviyesi ayarlar için)
 handle('settings:save', (event, data) => {
   try {
-    const settingsPath = path.join(app.getPath('userData'), 'settings.json')
-    let existing = {}
-    if (fs.existsSync(settingsPath)) existing = readConfig(settingsPath)
-    const merged = { ...existing, fullTunnel: true }
-    writeConfig(settingsPath, merged)
+    if (data?.locale !== undefined) changeLanguage(data.locale)
+    else writeConfig(settingsFile(), { ...loadSettings(), fullTunnel: true, locale: getLanguage() })
     return { success: true }
   } catch (e) {
     return { success: false, error: e.message }
   }
 })
 
-handle('settings:load', () => {
-  try {
-    const settingsPath = path.join(app.getPath('userData'), 'settings.json')
-    if (fs.existsSync(settingsPath)) return readConfig(settingsPath)
-    return {}
-  } catch {
-    return {}
-  }
-})
+handle('settings:load', () => ({ ...loadSettings(), locale: getLanguage() }))
 
 // Config dosyası seçme
 handle('dialog:open-config', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
-    title: 'XTP Bağlantı Dosyası Seç',
+    title: t('XTP Bağlantı Dosyası Seç'),
     filters: [
       { name: 'XTP JSON', extensions: ['json'] },
-      { name: 'Tüm Dosyalar', extensions: ['*'] }
+      { name: t('Tüm Dosyalar'), extensions: ['*'] }
     ],
     properties: ['openFile']
   })
@@ -554,7 +568,7 @@ handle('config:save', async (event, { name, content }) => {
   try {
     const configDir = path.join(app.getPath('userData'), 'configs')
     fs.mkdirSync(configDir, { recursive: true })
-    if (!/^[a-zA-Z0-9_-]{1,64}$/.test(name)) throw new Error('Geçersiz dosya adı.')
+    if (!/^[a-zA-Z0-9_-]{1,64}$/.test(name)) throw new Error(t('Geçersiz dosya adı.'))
     connectionConfig(parseConfig(content))
     const filePath = path.join(configDir, `${name}.json`)
     writeConfig(filePath, parseConfig(content))
@@ -654,7 +668,7 @@ if (!gotSingleInstanceLock) {
         isDisconnecting = false
         app.isQuitting = false
         mainWindow?.show()
-        dialog.showErrorBox('Trafik koruması açık kaldı', 'İnternet erişimi kilitli tutuluyor. Uygulamadaki İnterneti geri aç düğmesini kullanın.\n\n' + error.message)
+        dialog.showErrorBox(t('Trafik koruması açık kaldı'), t('İnternet erişimi kilitli tutuluyor. Uygulamadaki İnterneti geri aç düğmesini kullanın.') + '\n\n' + translateError(error))
         return
       }
       app.exit(0)

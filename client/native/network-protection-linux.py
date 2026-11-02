@@ -86,7 +86,25 @@ def owned(actual, state):
     if actual is None:
         return False
     marker = f"Xantum v1 owner={state['owner']} token={state['token']}"
-    if not any(item.get('table', {}).get('comment') == marker for item in actual['nftables']):
+    tables = [item['table'] for item in actual['nftables'] if 'table' in item]
+    if len(tables) != 1 or tables[0].get('family') != 'inet' or tables[0].get('name') != TABLE:
+        raise RuntimeError('Existing nft table is not owned by this Xantum session')
+    # nft 1.0.2 (Ubuntu 22.04) omits table comments from its JSON output, while
+    # rule comments are preserved. An unhooked chain carries the same random
+    # owner token for that version. Never override an explicitly different table
+    # comment, and keep the complete table fingerprint check unchanged.
+    if 'comment' in tables[0]:
+        matches = tables[0]['comment'] == marker
+    else:
+        identity = [item['chain'] for item in actual['nftables']
+                    if item.get('chain', {}).get('family') == 'inet' and
+                    item['chain'].get('table') == TABLE and item['chain'].get('name') == 'identity']
+        markers = [item['rule'] for item in actual['nftables']
+                   if item.get('rule', {}).get('family') == 'inet' and
+                   item['rule'].get('table') == TABLE and item['rule'].get('chain') == 'identity']
+        matches = (len(identity) == 1 and 'hook' not in identity[0] and
+                   len(markers) == 1 and markers[0].get('comment') == marker)
+    if not matches:
         raise RuntimeError('Existing nft table is not owned by this Xantum session')
     return True
 
@@ -106,6 +124,7 @@ def rules(state):
     ports = ', '.join(str(port) for port in state['ports'])
     marker = f"Xantum v1 owner={state['owner']} token={state['token']}"
     lines = [f'table inet {TABLE} {{', f'comment "{marker}"',
+             'chain identity {', f'counter comment "{marker}"', '}',
              # Destination NAT reroutes only after LOCAL_OUT finishes. Enforce
              # the actual egress in POSTROUTING, after that route lookup and SNAT.
              'chain output { type filter hook postrouting priority 200; policy drop;',

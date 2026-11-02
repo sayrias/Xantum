@@ -1,3 +1,4 @@
+import { t, useLocale } from '../i18n/useLocale.jsx'
 import React from 'react'
 
 /**
@@ -5,6 +6,7 @@ import React from 'react'
  * Animasyonlu halka + durum göstergesi
  */
 export default function ConnectionButton({ status, onClick }) {
+  const { locale, numberLocale } = useLocale()
   const { connected, connecting } = status
   
   const state = connecting ? 'connecting' : connected ? 'connected' : 'disconnected'
@@ -28,7 +30,7 @@ export default function ConnectionButton({ status, onClick }) {
           className={`connect-button ${state}`}
           onClick={onClick}
           disabled={connecting}
-          title={connected ? 'Bağlantıyı kes' : 'VPN\'e bağlan'}
+          title={connected ? t("Bağlantıyı kes") : t("VPN'e bağlan")}
         >
           {connecting ? (
             <div className="spinner" />

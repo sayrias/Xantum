@@ -1,15 +1,17 @@
+import { t, useLocale } from '../i18n/useLocale.jsx'
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import io from 'socket.io-client';
 import Peer from 'simple-peer/simplepeer.min.js';
 import '../styles/chat.css';
 
-const initials = name => Array.from(String(name || 'Oyuncu').trim().split(/\s+/).slice(0, 2).map(part => Array.from(part)[0] || '')).join('').toLocaleUpperCase('tr-TR');
+const initials = name => Array.from(String(name || t("Oyuncu")).trim().split(/\s+/).slice(0, 2).map(part => Array.from(part)[0] || '')).join('').toUpperCase();
 const messageTime = value => {
   const date = new Date(value);
   return Number.isFinite(date.getTime()) ? date : null;
 };
 
 export default function ChatTab({ connected }) {
+  const { locale, numberLocale } = useLocale()
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [onlineUsers, setOnlineUsers] = useState([]);
@@ -55,7 +57,7 @@ export default function ChatTab({ connected }) {
         if (p.nickname && p.nickname.trim().length > 0) return p.nickname;
       }
     } catch (e) {}
-    return 'Oyuncu_' + Math.random().toString(36).substring(2, 6);
+    return 'Player_' + Math.random().toString(36).substring(2, 6);
   };
 
   const [username, setUsername] = useState(getNickname);
@@ -230,7 +232,7 @@ export default function ChatTab({ connected }) {
     const start = async () => {
       const config = await window.electronAPI?.getChatConnection();
       if (cancelled) return;
-      if (!config?.url || !config.pin) throw new Error('Sohbet bağlantı bilgileri bulunamadı. VPN’e yeniden bağlanın.');
+      if (!config?.url || !config.pin) throw new Error(t("Sohbet bağlantı bilgileri bulunamadı. VPN’e yeniden bağlanın."));
       socket = io(config.url, { auth: { pin: config.pin }, transports: ['websocket'], timeout: 10000 });
       socketRef.current = socket;
       socket.on('connect', () => {
@@ -238,11 +240,11 @@ export default function ChatTab({ connected }) {
         setChatReady(true); setChatError('');
         socket.emit('join_network', { username: usernameRef.current });
       });
-      socket.on('connect_error', () => { setChatReady(false); setChatError('Sohbete bağlanılamadı. Sunucu adresini ve katılım anahtarını kontrol edin.'); });
+      socket.on('connect_error', () => { setChatReady(false); setChatError(t("Sohbete bağlanılamadı. Sunucu adresini ve katılım anahtarını kontrol edin.")); });
       socket.on('disconnect', () => {
         sendAttemptRef.current += 1; sendingRef.current = false;
         setChatReady(false); setSending(false); setOnlineUsers([]); setVoiceUsers([]); cleanupVoice();
-        setChatError('Sohbet bağlantısı kesildi. Yeniden bağlanılıyor…');
+        setChatError(t("Sohbet bağlantısı kesildi. Yeniden bağlanılıyor…"));
       });
       socket.on('online_users', setOnlineUsers);
       socket.on('voice_members', ids => setVoiceUsers(ids.filter(id => id !== socket.id)));
@@ -254,9 +256,9 @@ export default function ChatTab({ connected }) {
         peer.on('stream', stream => {
           remoteStreamsRef.current[id] = stream;
           const audio = audioRefs.current[id];
-          if (audio) { audio.srcObject = stream; audio.volume = volumeFor(id); audio.play().catch(() => setChatError('Sesi başlatmak için ses odasına yeniden katılın.')); }
+          if (audio) { audio.srcObject = stream; audio.volume = volumeFor(id); audio.play().catch(() => setChatError(t("Sesi başlatmak için ses odasına yeniden katılın."))); }
         });
-        peer.on('error', () => setChatError('Bir ses bağlantısı kurulamadı. Sunucunun TURN yapılandırmasını kontrol edin.'));
+        peer.on('error', () => setChatError(t("Bir ses bağlantısı kurulamadı. Sunucunun TURN yapılandırmasını kontrol edin.")));
         peer.on('close', () => {
           if (peersRef.current[id] === peer) { delete peersRef.current[id]; delete remoteStreamsRef.current[id]; }
         });
@@ -269,10 +271,10 @@ export default function ChatTab({ connected }) {
       });
       socket.on('voice_offer', ({ callerId, sdp }) => {
         if (!myStreamRef.current || peersRef.current[callerId]) return;
-        try { createPeer(callerId, false).signal(sdp); } catch { setChatError('Ses bağlantısı kurulamadı.'); }
+        try { createPeer(callerId, false).signal(sdp); } catch { setChatError(t("Ses bağlantısı kurulamadı.")); }
       });
       socket.on('voice_answer', ({ answererId, sdp }) => {
-        try { peersRef.current[answererId]?.signal(sdp); } catch { setChatError('Ses bağlantısı kurulamadı.'); }
+        try { peersRef.current[answererId]?.signal(sdp); } catch { setChatError(t("Ses bağlantısı kurulamadı.")); }
       });
       socket.on('user_left_voice', id => {
         peersRef.current[id]?.destroy(); delete peersRef.current[id]; delete remoteStreamsRef.current[id];
@@ -394,7 +396,7 @@ export default function ChatTab({ connected }) {
         active = false;
         gainNodeRef.current = null;
         audioCtx?.close().catch(() => {});
-        console.error('Audio pipeline hatası:', e);
+        console.error(t("Audio pipeline hatası:"), e);
       }
 
       // İzin beklerken PTT ayarı değişmiş olabilir; güncel tercihi uygula.
@@ -406,20 +408,20 @@ export default function ChatTab({ connected }) {
       myStreamRef.current = finalStream;
       const reply = await new Promise(resolve => {
         socketRef.current.timeout(5000).emit('join_voice_channel', {}, (error, result) => {
-          resolve(error ? { error: 'Ses odasına katılım onaylanmadı. Yeniden deneyin.' } : result);
+          resolve(error ? { error: t("Ses odasına katılım onaylanmadı. Yeniden deneyin.") } : result);
         });
       });
       if (generation !== voiceGenerationRef.current) return;
       if (!reply?.ok) {
         socketRef.current?.emit('leave_voice_channel'); cleanupVoice();
-        setChatError(reply?.error || 'Ses odasına katılım onaylanmadı. Yeniden deneyin.');
+        setChatError(reply?.error || t("Ses odasına katılım onaylanmadı. Yeniden deneyin."));
         return;
       }
       setInVoiceChannel(true);
     } catch (err) {
-      console.error('Mikrofon hatası:', err);
+      console.error(t("Mikrofon hatası:"), err);
       if (generation === voiceGenerationRef.current) {
-        cleanupVoice(); setChatError('Mikrofona erişilemedi. Sistem izinlerini ve seçili mikrofonu kontrol edin.');
+        cleanupVoice(); setChatError(t("Mikrofona erişilemedi. Sistem izinlerini ve seçili mikrofonu kontrol edin."));
       }
     } finally {
       if (generation === voiceGenerationRef.current) { joiningRef.current = false; setVoiceJoining(false); }
@@ -464,7 +466,7 @@ export default function ChatTab({ connected }) {
       if (socketRef.current !== socket || attempt !== sendAttemptRef.current) return;
       sendingRef.current = false; setSending(false);
       if (error || !reply?.message) {
-        setChatError(reply?.error || 'Teslim onayı alınamadı. Taslağın korundu; yeniden gönderebilirsin.'); return;
+        setChatError(reply?.error || t("Teslim onayı alınamadı. Taslağın korundu; yeniden gönderebilirsin.")); return;
       }
       shouldScrollRef.current = true; setAwayFromBottom(false);
       setMessages(prev => prev.some(m => m.id === reply.message.id) ? prev : [...prev, reply.message].slice(-300));
@@ -493,9 +495,9 @@ export default function ChatTab({ connected }) {
     return (
       <section className="chat-offline" aria-labelledby="chat-offline-title">
         <div className="chat-offline-symbol"><i className="fas fa-comments" aria-hidden="true" /></div>
-        <h2 id="chat-offline-title">Buluşma yeriniz, burada.</h2>
-        <p>Aynı sunucudaki kişilerle mesajlaş,<br />bir ses odasında birlikte vakit geçir.</p>
-        <div className="chat-offline-note"><i className="fas fa-plug" aria-hidden="true" /><span>Başlamak için Ana Sayfa’dan VPN’e bağlan.</span></div>
+        <h2 id="chat-offline-title">{t("Buluşma yeriniz, burada.")}</h2>
+        <p>{t("Aynı sunucudaki kişilerle mesajlaş,")}<br />{t("bir ses odasında birlikte vakit geçir.")}</p>
+        <div className="chat-offline-note"><i className="fas fa-plug" aria-hidden="true" /><span>{t("Başlamak için Ana Sayfa’dan VPN’e bağlan.")}</span></div>
       </section>
     );
   }
@@ -509,16 +511,16 @@ export default function ChatTab({ connected }) {
   return (
     <div className="chat-layout">
       {contextMenu && (
-        <div className="chat-volume-popover" role="dialog" aria-label={`${volumeUser?.username || 'Oyuncu'} ses ayarı`}
+        <div className="chat-volume-popover" role="dialog" aria-label={t('{name} ses ayarı', { name: volumeUser?.username || t('Oyuncu') })}
           onClick={e => e.stopPropagation()} style={{ top: contextMenu.y, left: contextMenu.x }}>
-          <div className="chat-volume-heading"><strong title={volumeUser?.username}>{volumeUser?.username || 'Oyuncu'}</strong>
-            <button type="button" className="chat-icon-button" aria-label="Ses ayarını kapat" onClick={() => { setContextMenu(null); volumeTriggerRef.current?.focus(); }}><i className="fas fa-xmark" aria-hidden="true" /></button>
+          <div className="chat-volume-heading"><strong title={volumeUser?.username}>{volumeUser?.username || t("Oyuncu")}</strong>
+            <button type="button" className="chat-icon-button" aria-label={t("Ses ayarını kapat")} onClick={() => { setContextMenu(null); volumeTriggerRef.current?.focus(); }}><i className="fas fa-xmark" aria-hidden="true" /></button>
           </div>
-          <label htmlFor="chat-user-volume">Ses seviyesi <output>{currentVolume}%</output></label>
-          <input autoFocus id="chat-user-volume" aria-label="Kullanıcı ses seviyesi" type="range" min="0" max="100" value={currentVolume}
+          <label htmlFor="chat-user-volume">{t("Ses seviyesi ")}<output>{currentVolume}%</output></label>
+          <input autoFocus id="chat-user-volume" aria-label={t("Kullanıcı ses seviyesi")} type="range" min="0" max="100" value={currentVolume}
             onChange={e => handleVolumeChange(contextMenu.userId, Number(e.target.value))} />
           <button type="button" className="chat-volume-toggle" onClick={() => handleVolumeChange(contextMenu.userId, currentVolume === 0 ? 100 : 0)}>
-            <i className={`fas ${currentVolume === 0 ? 'fa-volume-high' : 'fa-volume-xmark'}`} aria-hidden="true" /> {currentVolume === 0 ? 'Sesi aç' : 'Bu kişiyi sustur'}
+            <i className={`fas ${currentVolume === 0 ? 'fa-volume-high' : 'fa-volume-xmark'}`} aria-hidden="true" /> {currentVolume === 0 ? t("Sesi aç") : t("Bu kişiyi sustur")}
           </button>
         </div>
       )}
@@ -536,29 +538,29 @@ export default function ChatTab({ connected }) {
       <header className="chat-room-header">
         <div className="chat-room-heading">
           <span className="chat-room-mark"><i className="fas fa-comment-dots" aria-hidden="true" /></span>
-          <div><h2>Ağ sohbeti</h2><p className={`chat-connection ${chatReady ? 'is-online' : ''}`} role="status"><span aria-hidden="true" />{chatReady ? 'Aynı ağ, ortak sohbet.' : 'Sohbete bağlanıyor…'}</p></div>
+          <div><h2>{t("Ağ sohbeti")}</h2><p className={`chat-connection ${chatReady ? 'is-online' : ''}`} role="status"><span aria-hidden="true" />{chatReady ? t("Aynı ağ, ortak sohbet.") : t("Sohbete bağlanıyor…")}</p></div>
         </div>
-        <button type="button" className={`chat-presence-button ${showPeople ? 'is-open' : ''}`} aria-expanded={showPeople} aria-controls="chat-people" aria-label={`Ağdaki kişiler: ${onlineUsers.length}`} onClick={() => setShowPeople(value => !value)}>
+        <button type="button" className={`chat-presence-button ${showPeople ? 'is-open' : ''}`} aria-expanded={showPeople} aria-controls="chat-people" aria-label={t('Ağdaki kişiler: {count}', { count: onlineUsers.length })} onClick={() => setShowPeople(value => !value)}>
           <span className="chat-avatar-stack" aria-hidden="true">{onlineUsers.slice(0, 3).map((user, index) => <span key={user.id} className={`chat-avatar tone-${index % 3}`}>{initials(user.username)}</span>)}</span>
-          <span>{onlineUsers.length}<span className="chat-presence-label"> kişi</span></span><i className={`fas ${showPeople ? 'fa-chevron-up' : 'fa-chevron-down'}`} aria-hidden="true" />
+          <span>{onlineUsers.length}<span className="chat-presence-label">{t(" kişi", { count: onlineUsers.length })}</span></span><i className={`fas ${showPeople ? 'fa-chevron-up' : 'fa-chevron-down'}`} aria-hidden="true" />
         </button>
       </header>
 
-      {showPeople && <section id="chat-people" className="chat-presence-panel" aria-label="Ağdaki kişiler">
+      {showPeople && <section id="chat-people" className="chat-presence-panel" aria-label={t("Ağdaki kişiler")}>
         {onlineUsers.length ? <ul>{onlineUsers.map((user, index) => <li key={user.id}>
           <span className={`chat-avatar tone-${index % 3}`} aria-hidden="true">{initials(user.username)}</span>
-          <span className="chat-person-info"><strong title={user.username}>{user.username}{user.id === socketRef.current?.id && <small>sen</small>}</strong><span>{user.id === socketRef.current?.id && inVoiceChannel || voiceUsers.includes(user.id) ? 'Ses odasında' : 'Çevrimiçi'}</span></span>
+          <span className="chat-person-info"><strong title={user.username}>{user.username}{user.id === socketRef.current?.id && <small>{t("sen")}</small>}</strong><span>{user.id === socketRef.current?.id && inVoiceChannel || voiceUsers.includes(user.id) ? t("Ses odasında") : t("Çevrimiçi")}</span></span>
           <span className="chat-online-dot" aria-hidden="true" />
-        </li>)}</ul> : <p>Ağdaki kişiler bekleniyor…</p>}
+        </li>)}</ul> : <p>{t("Ağdaki kişiler bekleniyor…")}</p>}
       </section>}
 
-      {chatError && <div className="chat-error" role="alert"><i className="fas fa-circle-exclamation" aria-hidden="true" /><p>{chatError}</p>
-        {!chatReady && <button type="button" onClick={() => { setChatError(''); socketRef.current?.connect(); }}>Yeniden dene</button>}
+      {chatError && <div className="chat-error" role="alert"><i className="fas fa-circle-exclamation" aria-hidden="true" /><p>{t(chatError)}</p>
+        {!chatReady && <button type="button" onClick={() => { setChatError(''); socketRef.current?.connect(); }}>{t("Yeniden dene")}</button>}
       </div>}
-      <section className="chat-message-area" aria-label="Ağ sohbeti">
-        <div className="chat-messages" role="log" aria-label="Mesajlar" aria-live="polite" aria-relevant="additions" ref={messageListRef}
+      <section className="chat-message-area" aria-label={t("Ağ sohbeti")}>
+        <div className="chat-messages" role="log" aria-label={t("Mesajlar")} aria-live="polite" aria-relevant="additions" ref={messageListRef}
           onScroll={e => { const el = e.currentTarget; const away = el.scrollHeight - el.scrollTop - el.clientHeight >= 80; shouldScrollRef.current = !away; setAwayFromBottom(away); }}>
-          {!messages.length ? <div className="chat-empty"><div className="chat-empty-symbol"><i className="fas fa-hand-peace" aria-hidden="true" /></div><h3>Bir merhaba ile başlar.</h3><p>Ekibine mesaj gönder.<br />Sohbet buradan devam etsin.</p><span>Mesajlar bu oturumda tutulur.</span></div> : <div className="chat-session-divider"><span>Bu oturum</span></div>}
+          {!messages.length ? <div className="chat-empty"><div className="chat-empty-symbol"><i className="fas fa-hand-peace" aria-hidden="true" /></div><h3>{t("Bir merhaba ile başlar.")}</h3><p>{t("Ekibine mesaj gönder.")}<br />{t("Sohbet buradan devam etsin.")}</p><span>{t("Mesajlar bu oturumda tutulur.")}</span></div> : <div className="chat-session-divider"><span>{t("Bu oturum")}</span></div>}
           {messages.map((message, index) => {
             const mine = ownSocketIdsRef.current.has(message.senderId);
             const previous = messages[index - 1];
@@ -569,52 +571,52 @@ export default function ChatTab({ connected }) {
             return <article key={message.id} className={`chat-message ${mine ? 'is-mine' : ''} ${grouped ? 'is-grouped' : ''}`} aria-label={`${message.sender}: ${message.text}`}>
               {!mine && <span className="chat-message-avatar" aria-hidden="true">{grouped ? '' : initials(message.sender)}</span>}
               <div className="chat-message-content">
-                {!grouped && <div className="chat-message-meta"><strong title={message.sender}>{mine ? 'Sen' : message.sender}</strong>{time && <time dateTime={time.toISOString()}>{time.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</time>}</div>}
+                {!grouped && <div className="chat-message-meta"><strong title={message.sender}>{mine ? t("Sen") : message.sender}</strong>{time && <time dateTime={time.toISOString()}>{time.toLocaleTimeString(numberLocale, { hour: '2-digit', minute: '2-digit' })}</time>}</div>}
                 <p dir="auto">{message.text}</p>
-                {mine && lastInGroup && <span className="chat-message-delivery"><i className="fas fa-check-double" aria-hidden="true" /> Sunucuya iletildi</span>}
+                {mine && lastInGroup && <span className="chat-message-delivery"><i className="fas fa-check-double" aria-hidden="true" />{t(" Sunucuya iletildi")}</span>}
               </div>
             </article>;
           })}
         </div>
-        {awayFromBottom && <button type="button" className="chat-jump-button" onClick={scrollToLatest}><i className="fas fa-arrow-down" aria-hidden="true" /> Son mesajlar</button>}
+        {awayFromBottom && <button type="button" className="chat-jump-button" onClick={scrollToLatest}><i className="fas fa-arrow-down" aria-hidden="true" />{t(" Son mesajlar")}</button>}
       </section>
 
-      <aside className={`chat-voice-dock ${inVoiceChannel ? 'is-joined' : ''}`} aria-label="Ses odası">
-        <div className="chat-voice-identity"><span className="chat-voice-symbol"><i className="fas fa-headphones" aria-hidden="true" /></span><div><strong>Ses odası <span>{voiceCount}/8</span></strong><p>{inVoiceChannel ? 'Odaya bağlısın' : voiceCount ? `${voiceCount} kişi konuşuyor` : 'Birlikte konuşalım'}</p></div></div>
-        <ul className="chat-voice-members" aria-label="Odadaki kişiler">
-          {inVoiceChannel && <li className={`chat-voice-self ${!micMuted && (!pttEnabled || pttActive) ? 'is-speaking' : ''}`} title={`${username} · sen`}>
-            <span className="chat-avatar" aria-hidden="true">{initials(username)}</span><span className="chat-voice-person-name">{username}<small>sen</small></span>
-            <i className={`fas ${micMuted || (pttEnabled && !pttActive) ? 'fa-microphone-slash' : 'fa-microphone'}`} aria-label={micMuted ? 'Mikrofon kapalı' : pttEnabled && !pttActive ? 'Bas konuş bekliyor' : 'Mikrofon açık'} />
+      <aside className={`chat-voice-dock ${inVoiceChannel ? 'is-joined' : ''}`} aria-label={t("Ses odası")}>
+        <div className="chat-voice-identity"><span className="chat-voice-symbol"><i className="fas fa-headphones" aria-hidden="true" /></span><div><strong>{t("Ses odası ")}<span>{voiceCount}/8</span></strong><p>{inVoiceChannel ? t("Odaya bağlısın") : voiceCount ? t('{count} kişi konuşuyor', { count: voiceCount }) : t("Birlikte konuşalım")}</p></div></div>
+        <ul className="chat-voice-members" aria-label={t("Odadaki kişiler")}>
+          {inVoiceChannel && <li className={`chat-voice-self ${!micMuted && (!pttEnabled || pttActive) ? 'is-speaking' : ''}`} title={t('{name} · sen', { name: username })}>
+            <span className="chat-avatar" aria-hidden="true">{initials(username)}</span><span className="chat-voice-person-name">{username}<small>{t("sen")}</small></span>
+            <i className={`fas ${micMuted || (pttEnabled && !pttActive) ? 'fa-microphone-slash' : 'fa-microphone'}`} aria-label={micMuted ? t("Mikrofon kapalı") : pttEnabled && !pttActive ? t("Bas konuş bekliyor") : t("Mikrofon açık")} />
           </li>}
           {voiceUsers.map(userId => {
             const user = onlineUsers.find(item => item.id === userId);
             const muted = userVolumes[userId] === 0;
-            return <li key={userId}><button type="button" className={`chat-voice-person ${muted ? 'is-muted' : ''}`} aria-label={`${user?.username || 'Oyuncu'} ses seviyesini ayarla`}
-              aria-haspopup="dialog" aria-expanded={contextMenu?.userId === userId} title={`${user?.username || 'Oyuncu'} · ses ayarı`} onClick={e => handleContextMenu(e, userId)} onContextMenu={e => handleContextMenu(e, userId)}>
-              <span className="chat-avatar" aria-hidden="true">{initials(user?.username)}</span><span className="chat-voice-person-name">{user?.username || 'Oyuncu'}</span><i className={`fas ${muted ? 'fa-volume-xmark' : 'fa-volume-low'}`} aria-hidden="true" />
+            return <li key={userId}><button type="button" className={`chat-voice-person ${muted ? 'is-muted' : ''}`} aria-label={t('{name} ses seviyesini ayarla', { name: user?.username || t('Oyuncu') })}
+              aria-haspopup="dialog" aria-expanded={contextMenu?.userId === userId} title={t('{name} · ses ayarı', { name: user?.username || t('Oyuncu') })} onClick={e => handleContextMenu(e, userId)} onContextMenu={e => handleContextMenu(e, userId)}>
+              <span className="chat-avatar" aria-hidden="true">{initials(user?.username)}</span><span className="chat-voice-person-name">{user?.username || t("Oyuncu")}</span><i className={`fas ${muted ? 'fa-volume-xmark' : 'fa-volume-low'}`} aria-hidden="true" />
             </button></li>;
           })}
         </ul>
         {!inVoiceChannel ? <button type="button" className="chat-join-button" disabled={!chatReady || voiceJoining} onClick={joinVoice}>
-          <i className={`fas ${voiceJoining ? 'fa-circle-notch fa-spin' : 'fa-plus'}`} aria-hidden="true" />{voiceJoining ? 'Katılıyor…' : 'Sese katıl'}
+          <i className={`fas ${voiceJoining ? 'fa-circle-notch fa-spin' : 'fa-plus'}`} aria-hidden="true" />{voiceJoining ? t("Katılıyor…") : t("Sese katıl")}
         </button> : <div className="chat-voice-actions">
-          <button type="button" className={`chat-mic-button ${micMuted ? 'is-muted' : ''}`} onClick={toggleMic} aria-pressed={micMuted} aria-label={micMuted ? 'Mikrofonu aç' : 'Mikrofonu kapat'} title={micMuted ? 'Mikrofonu aç' : 'Mikrofonu kapat'}><i className={`fas ${micMuted ? 'fa-microphone-slash' : 'fa-microphone'}`} aria-hidden="true" /></button>
-          <button type="button" className="chat-leave-button" onClick={leaveVoice} aria-label="Ses odasından ayrıl" title="Ses odasından ayrıl"><i className="fas fa-phone-slash" aria-hidden="true" /><span>Ayrıl</span></button>
+          <button type="button" className={`chat-mic-button ${micMuted ? 'is-muted' : ''}`} onClick={toggleMic} aria-pressed={micMuted} aria-label={micMuted ? t("Mikrofonu aç") : t("Mikrofonu kapat")} title={micMuted ? t("Mikrofonu aç") : t("Mikrofonu kapat")}><i className={`fas ${micMuted ? 'fa-microphone-slash' : 'fa-microphone'}`} aria-hidden="true" /></button>
+          <button type="button" className="chat-leave-button" onClick={leaveVoice} aria-label={t("Ses odasından ayrıl")} title={t("Ses odasından ayrıl")}><i className="fas fa-phone-slash" aria-hidden="true" /><span>{t("Ayrıl")}</span></button>
         </div>}
         {inVoiceChannel && <div className={`chat-mic-status ${pttActive && !micMuted ? 'is-active' : ''}`} role="status">
-          {micMuted ? 'Mikrofonun kapalı' : pttEnabled ? <>{pttActive ? 'Sesin iletiliyor' : 'Basılı tut, konuş'} <kbd>{pttKey}</kbd></> : 'Mikrofonun açık'}
+          {micMuted ? t("Mikrofonun kapalı") : pttEnabled ? <>{pttActive ? t("Sesin iletiliyor") : t("Basılı tut, konuş")} <kbd>{pttKey}</kbd></> : t("Mikrofonun açık")}
         </div>}
       </aside>
 
       <div className="chat-compose-area">
         <form onSubmit={sendMessage} className="chat-composer">
-          <label className="sr-only" htmlFor="chat-message">Mesajın</label>
+          <label className="sr-only" htmlFor="chat-message">{t("Mesajın")}</label>
           <textarea id="chat-message" ref={composerRef} rows="2" value={text} maxLength={2000} onChange={e => setText(e.target.value)}
-            aria-describedby="chat-composer-hint" placeholder={chatReady ? 'Sohbete bir mesaj bırak…' : 'Bağlantı bekleniyor…'}
+            aria-describedby="chat-composer-hint" placeholder={chatReady ? t("Sohbete bir mesaj bırak…") : t("Bağlantı bekleniyor…")}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (!e.repeat) sendMessage(e); } }} />
-          <button type="submit" disabled={!chatReady || sending || !text.trim()} aria-label={sending ? 'Mesaj gönderiliyor' : 'Mesajı gönder'} title={sending ? 'Gönderiliyor…' : 'Gönder'}><i className={`fas ${sending ? 'fa-circle-notch fa-spin' : 'fa-arrow-up'}`} aria-hidden="true" /></button>
+          <button type="submit" disabled={!chatReady || sending || !text.trim()} aria-label={sending ? t("Mesaj gönderiliyor") : t("Mesajı gönder")} title={sending ? t("Gönderiliyor…") : t("Gönder")}><i className={`fas ${sending ? 'fa-circle-notch fa-spin' : 'fa-arrow-up'}`} aria-hidden="true" /></button>
         </form>
-        <div className="chat-composer-hint" id="chat-composer-hint"><span><kbd>Enter</kbd> gönder <span>·</span> <kbd>Shift + Enter</kbd> yeni satır</span><span className={text.length > 1800 ? 'is-near-limit' : ''}>{text.length.toLocaleString('tr-TR')} / 2.000</span></div>
+        <div className="chat-composer-hint" id="chat-composer-hint"><span><kbd>Enter</kbd>{t(" gönder ")}<span>·</span> <kbd>Shift + Enter</kbd>{t(" yeni satır")}</span><span className={text.length > 1800 ? 'is-near-limit' : ''}>{text.length.toLocaleString(numberLocale)} / {(2000).toLocaleString(numberLocale)}</span></div>
       </div>
     </div>
   );

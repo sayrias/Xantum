@@ -1,3 +1,5 @@
+'use strict'
+const { t, translateError, localizeResult } = require('./localization')
 /**
  * xtp-client.js — Xantum Tünel Protokolü (XTP) İstemci Motoru
  *
@@ -12,7 +14,6 @@
  *  5. Çift yönlü şifreli paket iletimi
  */
 
-'use strict'
 
 const { WebSocket }               = require('ws')
 const crypto                      = require('crypto')
@@ -102,17 +103,17 @@ class XTPClient {
   get protectionState() { return this.protection.getState() }
   async probeProtection(options) { return this.protection.probe(options) }
   async installHelpers() {
-    if (this.connected || this.connecting || this.session) throw new Error('Koruma kurulumundan önce VPN bağlantısını kesin.')
+    if (this.connected || this.connecting || this.session) throw new Error(t('Koruma kurulumundan önce VPN bağlantısını kesin.'))
     return this.protection.installHelpers()
   }
   async releaseProtection() {
-    if (this.connected || this.connecting || this.session) throw new Error('Koruma kaldırılmadan önce VPN bağlantısını kesin.')
+    if (this.connected || this.connecting || this.session) throw new Error(t('Koruma kaldırılmadan önce VPN bağlantısını kesin.'))
     return this.protection.release()
   }
 
   /* ---- Bağlan ---- */
   async connect({ serverHost, wsPort = 8443, url, pin, fullTunnel = true, controlPorts = [] }) {
-    if (this.connecting || this.session) throw new Error('Önce mevcut bağlantıyı kapatın.')
+    if (this.connecting || this.session) throw new Error(t('Önce mevcut bağlantıyı kapatın.'))
     const target = endpoint(url || `wss://${serverHost}:${wsPort}`, 'wss:')
     this.connecting = true
     const generation = ++this.generation
@@ -124,10 +125,10 @@ class XTPClient {
       address = this.protection.getState().active && (this.endpointCache.get(hostname) || this.protection.savedEndpoint)
       if (!address) address = (await this.resolveHost(hostname, { family: 4 })).address
       this.endpointCache.set(hostname, address)
-      if (generation !== this.generation) throw new Error('Bağlantı iptal edildi.')
+      if (generation !== this.generation) throw new Error(t('Bağlantı iptal edildi.'))
       if (fullTunnel) await this.protection.arm({ endpoint: address, ports: [Number(new URL(target).port || (new URL(target).protocol === 'wss:' ? 443 : 80)), ...controlPorts] })
     } catch (error) { if (generation === this.generation) this.connecting = false; throw error }
-    if (generation !== this.generation) throw new Error('Bağlantı iptal edildi.')
+    if (generation !== this.generation) throw new Error(t('Bağlantı iptal edildi.'))
     this.serverEndpoint = address
     this.fullTunnel = fullTunnel
     this.rxBytes = this.txBytes = 0
@@ -142,13 +143,13 @@ class XTPClient {
     this.session = session
     return new Promise((resolve, reject) => {
       let phase = 'hello', settled = false
-      const deadline = setTimeout(() => finish(new Error('XTP bağlantısı zaman aşımına uğradı.')), 25000)
+      const deadline = setTimeout(() => finish(new Error(t('XTP bağlantısı zaman aşımına uğradı.'))), 25000)
       const finish = error => {
         if (session.cleanup) return session.cleanup
         clearTimeout(deadline)
         const wasConnected = this.connected
         this.connected = false
-        if (!settled) { settled = true; reject(error || new Error('XTP bağlantısı kapandı.')) }
+        if (!settled) { settled = true; reject(error || new Error(t('XTP bağlantısı kapandı.'))) }
         session.cleanup = (async () => {
           ws.terminate()
           try { await session.setup } catch {}
@@ -166,19 +167,19 @@ class XTPClient {
       ws.on('message', async (msg, isBinary) => {
         try {
           if (phase === 'hello') {
-            if (isBinary) throw new Error('Geçersiz XTP el sıkışması.')
+            if (isBinary) throw new Error(t('Geçersiz XTP el sıkışması.'))
             const data = JSON.parse(msg.toString())
-            if (data.type !== 'SERVER_HELLO') throw new Error('XTP sunucu yanıtı geçersiz.')
-            if (!/^10\.8\.0\.(?:[2-9]|[1-9]\d|1\d\d|2[0-4]\d|25[0-4])$/.test(data.assignedIp) || data.serverIp !== '10.8.0.1' || !Number.isInteger(data.mtu) || data.mtu < 576 || data.mtu > 1500) throw new Error('Geçersiz XTP ağ yapılandırması.')
+            if (data.type !== 'SERVER_HELLO') throw new Error(t('XTP sunucu yanıtı geçersiz.'))
+            if (!/^10\.8\.0\.(?:[2-9]|[1-9]\d|1\d\d|2[0-4]\d|25[0-4])$/.test(data.assignedIp) || data.serverIp !== '10.8.0.1' || !Number.isInteger(data.mtu) || data.mtu < 576 || data.mtu > 1500) throw new Error(t('Geçersiz XTP ağ yapılandırması.'))
             this.sharedKey = crypto.createHash('sha256').update(ecdh.computeSecret(Buffer.from(data.pubKey, 'base64'))).digest()
             this.assignedIp = data.assignedIp; this.serverIp = data.serverIp; this.mtu = data.mtu
             phase = 'auth'
             ws.send(JSON.stringify({ type: 'CLIENT_HELLO', pubKey: ecdh.getPublicKey('base64'), pin }))
           } else if (phase === 'auth') {
-            if (isBinary) throw new Error('Geçersiz XTP kimlik yanıtı.')
+            if (isBinary) throw new Error(t('Geçersiz XTP kimlik yanıtı.'))
             const data = JSON.parse(msg.toString())
-            if (data.type !== 'AUTH_OK') throw new Error(data.error || 'Kimlik doğrulama başarısız.')
-            if (data.ip !== this.assignedIp || data.serverIp !== this.serverIp || data.mtu !== this.mtu) throw new Error('XTP yapılandırması değişti.')
+            if (data.type !== 'AUTH_OK') throw new Error(translateError(data.error || 'Kimlik doğrulama başarısız.'))
+            if (data.ip !== this.assignedIp || data.serverIp !== this.serverIp || data.mtu !== this.mtu) throw new Error(t('XTP yapılandırması değişti.'))
             phase = 'setup'
             session.setup = this._setupTun(data.ip, data.serverIp, data.mtu)
             await session.setup
@@ -242,7 +243,7 @@ class XTPClient {
     this.mtu = mtu || 1380
     if (IS_WIN)   return this._setupTunWindows(assignedIp, serverIp)
     if (IS_LINUX) return this._setupTunLinux(assignedIp, serverIp)
-    throw new Error('Desteklenmeyen platform')
+    throw new Error(t('Desteklenmeyen platform'))
   }
 
   /* ---- Linux TUN ---- */
@@ -264,12 +265,12 @@ class XTPClient {
 
     let existing = false
     try { execFileSync('ip', ['link', 'show', 'dev', iface], { stdio: 'ignore' }); existing = true } catch {}
-    if (existing) throw new Error('xtp0 arayüzü zaten kullanımda; önce mevcut VPN oturumunu kapatın.')
+    if (existing) throw new Error(t('xtp0 arayüzü zaten kullanımda; önce mevcut VPN oturumunu kapatın.'))
 
     const helperPath = getHelperPath()
-    if (!fs.existsSync(helperPath)) throw new Error(`xtp-tun-helper bulunamadı: ${helperPath}`)
+    if (!fs.existsSync(helperPath)) throw new Error(t('xtp-tun-helper bulunamadı: {file}', { file: helperPath }))
 
-    if (!egressDev) throw new Error('Sunucuya fiziksel ağ rotası bulunamadı.')
+    if (!egressDev) throw new Error(t('Sunucuya fiziksel ağ rotası bulunamadı.'))
     /* Root-owned broker only; polkit keeps the Electron renderer unprivileged. */
     const helperArgs = [
       iface,
@@ -292,18 +293,18 @@ class XTPClient {
     this.tunProcess.stdin.on('error', () => this.ws?.terminate())
 
     await new Promise((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error('TUN hazır sinyali alınamadı (10s timeout)')), 10000)
-      this.tunProcess.once('error', error => { clearTimeout(t); reject(error) })
-      this.tunProcess.once('exit', code => { clearTimeout(t); reject(new Error(`TUN kapandı (${code})`)) })
+      const readyTimer = setTimeout(() => reject(new Error(t('TUN hazır sinyali alınamadı (10s timeout)'))), 10000)
+      this.tunProcess.once('error', error => { clearTimeout(readyTimer); reject(error) })
+      this.tunProcess.once('exit', code => { clearTimeout(readyTimer); reject(new Error(t('TUN kapandı ({code})', { code }))) })
       this.tunProcess.stderr.on('data', (d) => {
         const s = d.toString()
         console.log('[XTP TUN Linux]', s.trim())
-        if (s.includes('TUN_READY')) { clearTimeout(t); resolve() }
-        if (s.includes('ERROR'))     { clearTimeout(t); reject(new Error(s)) }
+        if (s.includes('TUN_READY')) { clearTimeout(readyTimer); resolve() }
+        if (s.includes('ERROR'))     { clearTimeout(readyTimer); reject(new Error(translateError(s))) }
       })
       this.tunProcess.on('exit', (code) => {
-        clearTimeout(t)
-        if (code !== 0) reject(new Error(`xtp-tun-helper çıktı (kod: ${code})`))
+        clearTimeout(readyTimer)
+        if (code !== 0) reject(new Error(t('xtp-tun-helper çıktı (kod: {code})', { code })))
       })
     })
   }
@@ -311,7 +312,7 @@ class XTPClient {
   /* ---- Windows TUN (WinTun) ---- */
   async _setupTunWindows(assignedIp, serverIp) {
     const helperPath = getHelperPath()
-    if (!fs.existsSync(helperPath)) throw new Error(`xtp-tun-helper.exe bulunamadı: ${helperPath}`)
+    if (!fs.existsSync(helperPath)) throw new Error(t('xtp-tun-helper.exe bulunamadı: {file}', { file: helperPath }))
 
     const mask = '255.255.255.0'
     this.tunProcess = spawn(
@@ -324,14 +325,14 @@ class XTPClient {
     this.tunProcess.stdin.on('error', () => this.ws?.terminate())
 
     await new Promise((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error('Windows TUN timeout')), 8000)
-      this.tunProcess.once('error', error => { clearTimeout(t); reject(error) })
-      this.tunProcess.once('exit', code => { clearTimeout(t); reject(new Error(`TUN kapandı (${code})`)) })
+      const readyTimer = setTimeout(() => reject(new Error(t('Windows TUN timeout'))), 8000)
+      this.tunProcess.once('error', error => { clearTimeout(readyTimer); reject(error) })
+      this.tunProcess.once('exit', code => { clearTimeout(readyTimer); reject(new Error(t('TUN kapandı ({code})', { code }))) })
       this.tunProcess.stderr.on('data', (d) => {
         const s = d.toString().trim()
         console.log('[XTP TUN Win]', s)
-        if (s.includes('TUN_READY')) { clearTimeout(t); resolve() }
-        if (s.includes('ERROR'))     { clearTimeout(t); reject(new Error(s)) }
+        if (s.includes('TUN_READY')) { clearTimeout(readyTimer); resolve() }
+        if (s.includes('ERROR'))     { clearTimeout(readyTimer); reject(new Error(translateError(s))) }
       })
     })
 

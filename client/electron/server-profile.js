@@ -1,4 +1,5 @@
 'use strict'
+const { t, translateError, localizeResult } = require('./localization')
 const fs = require('node:fs')
 const path = require('node:path')
 const { readConfig, writeConfig } = require('./config-store')
@@ -6,11 +7,11 @@ const { connectionConfig } = require('./connection-config')
 
 function profileLabel(value) {
   return typeof value === 'string' && value.trim() && value.length <= 64 && !/[\x00-\x1f\x7f]/.test(value)
-    ? value.trim() : 'Hazır bağlantı'
+    ? t(value.trim()) : t('Hazır bağlantı')
 }
 function read(file) {
   try { return readConfig(file) }
-  catch { throw new Error('Bağlantı profili okunamadı. Ayarlar → Sunucun bölümünden bilgileri yeniden kaydedin.') }
+  catch { throw new Error(t('Bağlantı profili okunamadı. Ayarlar → Sunucun bölümünden bilgileri yeniden kaydedin.')) }
 }
 function exists(file) {
   try { fs.lstatSync(file); return true }
@@ -30,12 +31,12 @@ function loadServerProfile({ userData, isPackaged, resourcesPath, developmentPro
     : developmentProfile
   if (bundled && exists(bundled)) {
     const value = read(bundled)
-    if (value.version !== 1) throw new Error('Hazır bağlantı profilinin sürümü desteklenmiyor. Sunucunu Ayarlar bölümünden kaydedebilirsin.')
+    if (value.version !== 1) throw new Error(t('Hazır bağlantı profilinin sürümü desteklenmiyor. Sunucunu Ayarlar bölümünden kaydedebilirsin.'))
     const config = connectionConfig(value), label = profileLabel(value.label)
     writeConfig(saved, { ...config, profileOrigin: 'bundled', profileLabel: label })
     return { config, source: 'bundled', label }
   }
   if (!isPackaged && legacyFile && exists(legacyFile)) return { config: connectionConfig(read(legacyFile)), source: 'manual', label: '' }
-  throw new Error('Önce Ayarlar → Sunucun bölümünden sunucu adresini ve katılım anahtarını kaydedin.')
+  throw new Error(t('Önce Ayarlar → Sunucun bölümünden sunucu adresini ve katılım anahtarını kaydedin.'))
 }
 module.exports = { loadServerProfile }

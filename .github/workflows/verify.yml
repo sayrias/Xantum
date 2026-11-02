@@ -25,7 +25,10 @@ jobs:
         run: |
           npm audit --prefix client --omit=dev --audit-level=moderate
           npm audit --prefix server/xantum-server/backend --omit=dev --audit-level=moderate
-      - run: npm test --prefix client
+      - name: Test source without prebuilt renderer artifacts
+        run: |
+          test ! -f client/dist/index.html
+          npm test --prefix client
       - run: npm test --prefix development/selective-vpn
       - run: npm run build:ui --prefix client
       - name: Compile Linux helper with fortified libc and warnings as errors
@@ -67,7 +70,11 @@ jobs:
   linux-network-protection:
     # This tests nftables semantics in a user + network namespace. It is not a
     # desktop/distribution certification or a reason to run the app as root.
-    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4

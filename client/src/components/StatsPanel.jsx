@@ -1,3 +1,4 @@
+import { t, useLocale } from '../i18n/useLocale.jsx'
 import React from 'react'
 import { AreaChart, Area, Tooltip, ResponsiveContainer } from 'recharts'
 import { formatBytes, formatSpeed } from '../hooks/useNetworkStats'
@@ -9,17 +10,18 @@ import { formatBytes, formatSpeed } from '../hooks/useNetworkStats'
  * - Mini hız grafiği (Recharts)
  */
 export default function StatsPanel({ stats, connected }) {
+  const { locale, numberLocale } = useLocale()
   const { rxTotal, txTotal, rxSpeed, txSpeed, history } = stats
   
-  const rxFormatted = formatBytes(rxTotal)
-  const txFormatted = formatBytes(txTotal)
-  const rxSpeedFmt  = formatSpeed(rxSpeed)
-  const txSpeedFmt  = formatSpeed(txSpeed)
+  const rxFormatted = formatBytes(rxTotal, numberLocale)
+  const txFormatted = formatBytes(txTotal, numberLocale)
+  const rxSpeedFmt  = formatSpeed(rxSpeed, numberLocale)
+  const txSpeedFmt  = formatSpeed(txSpeed, numberLocale)
 
 
   return (
     <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', opacity: connected ? 1 : 0.5, pointerEvents: connected ? 'auto' : 'none' }}>
-      <span className="section-title"><i className="fas fa-chart-bar" style={{ marginRight: '6px' }}></i> Canlı İstatistikler</span>
+      <span className="section-title"><i className="fas fa-chart-bar" style={{ marginRight: '6px' }}></i>{t(" Canlı İstatistikler")}</span>
       
       {/* Hız kartları */}
       <div className="stats-grid">
@@ -27,14 +29,13 @@ export default function StatsPanel({ stats, connected }) {
         <div className="stat-item">
           <div className="stat-icon-label">
             <span className="stat-arrow-down"><i className="fas fa-arrow-down"></i></span>
-            <span>İndirme</span>
+            <span>{t("İndirme")}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
             <span id="rx-speed" className="stat-value">{rxSpeedFmt.value}</span>
             <span className="stat-unit">{rxSpeedFmt.unit}</span>
           </div>
-          <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-            Toplam: {rxFormatted.value} {rxFormatted.unit}
+          <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{t(" Toplam: ")}{rxFormatted.value} {rxFormatted.unit}
           </div>
         </div>
         
@@ -42,14 +43,13 @@ export default function StatsPanel({ stats, connected }) {
         <div className="stat-item">
           <div className="stat-icon-label">
             <span className="stat-arrow-up"><i className="fas fa-arrow-up"></i></span>
-            <span>Yükleme</span>
+            <span>{t("Yükleme")}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
             <span id="tx-speed" className="stat-value">{txSpeedFmt.value}</span>
             <span className="stat-unit">{txSpeedFmt.unit}</span>
           </div>
-          <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-            Toplam: {txFormatted.value} {txFormatted.unit}
+          <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{t(" Toplam: ")}{txFormatted.value} {txFormatted.unit}
           </div>
         </div>
       </div>
@@ -78,8 +78,8 @@ export default function StatsPanel({ stats, connected }) {
                   color: '#f0f4ff',
                 }}
                 formatter={(value, name) => {
-                  const speed = formatSpeed(value)
-                  return [`${speed.value} ${speed.unit}`, name === 'rx' ? '↓ İndirme' : '↑ Yükleme']
+                  const speed = formatSpeed(value, numberLocale)
+                  return [`${speed.value} ${speed.unit}`, name === 'rx' ? t("↓ İndirme") : t("↑ Yükleme")]
                 }}
                 labelFormatter={() => ''}
               />
