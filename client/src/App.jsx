@@ -55,7 +55,15 @@ export default function App() {
       if (status.connected) {
         await disconnect()
       } else {
-        if (status.protection?.setupRequired) { setError('Bağlanmadan önce yukarıdaki “Korumayı kur” adımını tamamla.'); return }
+        if (status.protection?.setupRequired) {
+          setError('İlk bağlantı için yönetici onayı bekleniyor…')
+          const setup = await installHelpers()
+          if (!setup?.success) { setError(setup?.error || 'Ağ yardımcıları kurulamadı. Yeniden deneyebilirsin.'); return }
+          if (setup.protection?.active || setup.protection?.state === 'unknown') {
+            setError('Kurulum tamamlandı. Önceki koruma oturumunu “Durumu denetle” ile kontrol et.'); return
+          }
+          setError(null)
+        }
         if (!selectedConfig) {
           // Otomatik kayıt (API üzerinden) dene
           setError('Sunucuya bağlanılıyor...')
@@ -77,8 +85,10 @@ export default function App() {
         }
         await connect(selectedConfig.path)
       }
+    } catch (failure) {
+      setError(failure.message || 'Bağlantı hazırlığı tamamlanamadı. Yeniden deneyebilirsin.')
     } finally { toggleBusy.current = false; setRegistering(false) }
-  }, [status, selectedConfig, connect, disconnect])
+  }, [status, selectedConfig, connect, disconnect, installHelpers])
 
   // Tray'den gelen toggle komutu
   useEffect(() => {

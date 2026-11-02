@@ -55,6 +55,10 @@ class SystemProtectionAdapter {
       trustedLinuxHelper(path.join(LINUX_ROOT, 'network-protection-linux.py'), this.stat)
       trustedLinuxHelper(path.join(LINUX_ROOT, 'xtp-tun-helper'), this.stat)
       trustedLinuxHelper(LINUX_POLICY, this.stat)
+      const policy = this.readFile(LINUX_POLICY, 'utf8')
+      if (!/<annotate\s+key=["']org\.freedesktop\.policykit\.imply["']>\s*org\.xantum\.tun\s*<\/annotate>/.test(policy)) {
+        throw new Error('Linux yardımcılarının yetki ilkesi güncellenmeli.')
+      }
       return null
     } catch (error) { return setupError(error) }
   }

@@ -16,6 +16,10 @@ Kendi sunucunu kurmak, Windows/Linux istemcisini çalıştırmak ve sorunları i
 | [Seçmeli VPN laboratuvarı](../development/selective-vpn/README.md) | Ana uygulamadan ayrı deneysel politika ve TLS CONNECT prototipi |
 | [Sonraki sürüm planı](../development/selective-vpn/PLAN.md) | Uygulama/site seçimi, Windows/Linux adaptörleri, aşamalar ve kabul koşulları |
 
+## Kaynak kodu paylaşma
+
+VS Code kullanmadan yeni GitHub deposuna gönderim, eski uzak bağlantıyı değiştirme ve doğru dala dönme: [GitHub terminal rehberi](GITHUB.md).
+
 ## İlk bağlantı
 
 1. Proje dizininde `bash xantum.sh` çalıştır → **1: Sunucu Kurulumu**. IP adresini ve SSH bilgilerini gir; otomatik sertifika seçeneğiyle devam et. Sertifika dosyası yolu gerekmez. [Kurulum adımları](KURULUM.md).
@@ -40,7 +44,7 @@ VDS sağlayıcının panelinde gelen **TCP 80** erişimi açık olmalı; sertifi
 
 ### Yerel yardımcı veya yetki hatası görüyorum
 
-Yerel yardımcı, işletim sisteminin sanal ağ adaptörünü ve trafik korumasını yönetir. Linux'ta eksik kurulum bildirimi görünüyorsa **Korumayı kur** ile bilgisayarının yönetici onayını ver; uygulamayı sudo ile açma. Güncel AppImage yardımcıları içerir, Debian paketi sistem kurulumunda kopyalar. Kaynak alternatifi ve eksik paketler [derleme rehberinde](BUILDING.md). Windows'ta yönetici yetkisi gerekir.
+Yerel yardımcı, işletim sisteminin sanal ağ adaptörünü ve trafik korumasını yönetir. Linux'ta ilk **Bağlan** tıklamasında gereken kurulum yönetici onayıyla yapılır; **Korumayı kur** ile ayrıca hazırlamak isteğe bağlıdır; uygulamayı sudo ile açma. Güncel AppImage yardımcıları içerir, Debian paketi sistem kurulumunda kopyalar. Kaynak alternatifi ve eksik paketler [derleme rehberinde](BUILDING.md). Windows'ta yönetici yetkisi gerekir.
 
 ### Uygulama kapandı, internet erişimi gelmiyor
 

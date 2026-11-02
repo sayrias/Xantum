@@ -35,7 +35,7 @@ gcc -Wall -Wextra -Werror -O2 -D_FORTIFY_SOURCE=2 -o client/bin/xtp-tun-helper s
 npm run build:linux --prefix client
 ```
 
-Çıktı: `client/dist-electron/`. Debian paketinin kurulum kancası root sahipli TUN/koruma yardımcılarını ve polkit ilkesini kurar; kaldırma kancası önce sahipli koruma oturumunu temizler. Geliştirme veya AppImage ilk açılışında **Korumayı kur** düğmesi yönetici onayıyla yardımcıları kurar. Terminal alternatifi:
+Çıktı: `client/dist-electron/`. Debian paketinin kurulum kancası root sahipli TUN/koruma yardımcılarını ve polkit ilkesini kurar; kaldırma kancası önce sahipli koruma oturumunu temizler. Geliştirme veya AppImage ile ilk bağlantıda yardımcılar yönetici onayıyla hazırlanır; ayrı “Korumayı kur” düğmesi isteğe bağlıdır. Terminal alternatifi:
 
 ```bash
 sudo bash client/native/install-linux-helpers.sh
@@ -73,3 +73,9 @@ Windows NSIS paketlemesi tercihen Windows makinesinde yapılır. Linux çapraz p
 ## Bağımlılık güvenliği
 
 Bağımlılık sürümleri kilit dosyalarında tutulur; denetim ve güncelleme işleri [geliştirme planında](GELISTIRME-PLANI.md) izlenir. Kilit dosyasını kullanın; audit fix --force ile eski bir paketleyiciye dönmeyin.
+
+## Parola ve yönetici onayı
+
+Linux deb paketi kurulum sırasında yardımcıları da kurar; uygulamada ayrı kurulum adımı yoktur. AppImage/kaynak çalıştırmada ilk bağlantı bu hazırlığı yapar. İlk yardımcı kurulumu ile bağlantı yetkisi ayrı işlemler olduğundan ilk kullanımda iki onay görülebilir. Ağ koruması onayı, dar kapsamlı TUN eylemini polkit `imply` ile kapsar; geçici onay geçerliyken aynı bağlantının ikinci TUN parolası hedeflenmez. Süre ve tekrar isteme davranışını sistemin polkit ilkesi belirler; kalıcı parolasız root yetkisi verilmez. Gerçek masaüstünde doğrulanmalıdır.
+
+Windows paketi yönetici kurulumu ve uygulama açılışında UAC kullanır; ayrı “Korumayı kur” akışı yoktur. Linux'ta üretilen NSIS paketi gerçek Windows testi yerine geçmez. NSIS çapraz derleme araçları Türkçe harf dönüşümünden etkilenebildiği için derleme çocuk süreçleri `C.UTF-8` yerel ayarıyla çalışır; Unicode proje yolları korunur.
