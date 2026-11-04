@@ -1,4 +1,5 @@
 import { t, useLocale } from '../i18n/useLocale.jsx'
+import LanguageSelector from './LanguageSelector.jsx'
 import ServerSettings from './ServerSettings.jsx'
 import React, { useState, useEffect, useRef } from 'react'
 
@@ -244,6 +245,7 @@ export default function SettingsTab() {
   return (
     <div className="glass-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
       
+      <LanguageSelector />
       <ServerSettings />
       {/* GENEL AYARLAR */}
       <div>

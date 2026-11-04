@@ -11,7 +11,7 @@
 .chat-layout :focus-visible, .chat-offline :focus-visible { outline: 2px solid var(--chat-cyan, #79e4d4); outline-offset: 3px; }
 .chat-layout ::selection { background: #514a86; color: #fff; }
 .chat-layout kbd { font: inherit; }
-.chat-room-header { display: flex; justify-content: space-between; align-items: center; flex: 0 0 auto; gap: 12px; padding: 19px 24px 17px; border-bottom: 1px solid var(--chat-line); }
+.chat-room-header { display: flex; justify-content: space-between; align-items: center; flex: 0 0 auto; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--chat-line); }
 .chat-room-heading { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .chat-room-mark { color: var(--chat-cyan); font-size: 24px; }
 .chat-room-heading h2 { font-size: 20px; font-weight: 650; line-height: 1.25; letter-spacing: -.025em; }
@@ -43,7 +43,7 @@
 .chat-layout .chat-messages { flex: 1; width: 100%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 16px 25px 5px; scrollbar-width: thin; scrollbar-color: #45556f transparent; }
 .chat-messages::-webkit-scrollbar { width: 5px; }
 .chat-messages::-webkit-scrollbar-thumb { background: #45556f; border-radius: 5px; }
-.chat-session-divider { display: flex; justify-content: center; margin-bottom: 21px; color: var(--chat-muted); font-size: 10px; }
+.chat-session-divider { display: flex; justify-content: center; margin-bottom: 14px; color: var(--chat-muted); font-size: 10px; }
 .chat-session-divider > span { padding: 3px 10px; background: #172135; border-radius: 5px; }
 .chat-layout .chat-empty { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 8px 28px; text-align: center; color: var(--chat-secondary); }
 .chat-empty-symbol { margin-bottom: 16px; color: var(--chat-purple); font-size: 33px; }
@@ -134,7 +134,7 @@
   .chat-layout .chat-empty p { font-size: 12px; }
 }
 @media (max-width: 650px) {
-  .chat-room-header { padding: 16px 18px; }
+  .chat-room-header { padding: 12px 18px; }
   .chat-layout .chat-messages { padding-inline: 18px; }
   .chat-voice-dock { margin-inline: 15px; gap: 8px 12px; }
   .chat-compose-area { padding-inline: 15px; }
@@ -143,7 +143,7 @@
   .chat-layout .chat-message { max-width: 92%; }
 }
 @media (max-width: 480px) {
-  .chat-room-header { padding: 14px; gap: 8px; }
+  .chat-room-header { padding: 11px 14px; gap: 8px; }
   .chat-room-heading { gap: 9px; }
   .chat-room-heading h2 { font-size: 18px; }
   .chat-room-mark { font-size: 20px; }

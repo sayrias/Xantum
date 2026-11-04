@@ -33,11 +33,15 @@ function execute(file, args) {
 }
 
 // A privileged helper must never be executable from a user-writable directory.
-function trustedLinuxHelper(file, stat = fs.lstatSync) {
+function trustedLinuxHelper(file, stat = fs.lstatSync, { executable = true } = {}) {
   let current = file
   while (true) {
     const entry = stat(current)
-    if (entry.isSymbolicLink() || entry.uid !== 0 || (entry.mode & 0o022)) throw new Error(t('Linux ağ yardımcısı ve üst klasörleri root sahipli ve yazmaya kapalı olmalı.'))
+    if (entry.isSymbolicLink() || entry.uid !== 0 || (entry.mode & 0o022) ||
+        (current === file && ((typeof entry.isFile === 'function' && !entry.isFile()) || (executable && !(entry.mode & 0o111)))) ||
+        (current !== file && typeof entry.isDirectory === 'function' && !entry.isDirectory())) {
+      throw new Error(t('Linux ağ yardımcısı ve üst klasörleri root sahipli ve yazmaya kapalı olmalı.'))
+    }
     if (current === '/') break
     current = path.dirname(current)
   }
@@ -55,7 +59,7 @@ class SystemProtectionAdapter {
     try {
       trustedLinuxHelper(path.join(LINUX_ROOT, 'network-protection-linux.py'), this.stat)
       trustedLinuxHelper(path.join(LINUX_ROOT, 'xtp-tun-helper'), this.stat)
-      trustedLinuxHelper(LINUX_POLICY, this.stat)
+      trustedLinuxHelper(LINUX_POLICY, this.stat, { executable: false })
       const policy = this.readFile(LINUX_POLICY, 'utf8')
       if (!/<annotate\s+key=["']org\.freedesktop\.policykit\.imply["']>\s*org\.xantum\.tun\s*<\/annotate>/.test(policy)) {
         throw new Error(t('Linux yardımcılarının yetki ilkesi güncellenmeli.'))
@@ -66,6 +70,9 @@ class SystemProtectionAdapter {
 
   async installHelpers() {
     if (this.platform !== 'linux') throw new Error(t('Bu işletim sisteminde ayrı Linux yardımcı kurulumu gerekmiyor.'))
+    // Re-check the persistent, root-owned installation rather than remembering a
+    // flag in user settings. Repeated/stale setup actions must not re-elevate.
+    if (!this.linuxSetupError()) return this.status()
     await this.install({ resourcesPath: this.resourcesPath })
     const error = this.linuxSetupError()
     if (error) throw error
@@ -143,9 +150,11 @@ class NetworkProtection {
       return this._accept(await this.adapter.installHelpers(), 'armed')
     } catch (error) {
       try { this._accept(await this.adapter.status(), 'armed') } catch (probeError) {
-        this._set({ state: 'unknown', active: this.state.active || !!probeError.journalExists, blocked: this.state.blocked || !!probeError.journalExists, verified: false })
+        this._set({ state: 'unknown', active: this.state.active || !!probeError.journalExists, blocked: this.state.blocked || !!probeError.journalExists, verified: false,
+          // A journal verification error does not invalidate installed helpers.
+          setupRequired: probeError.journalExists ? !!probeError.setupRequired : this.state.setupRequired })
       }
-      this._set({ verified: false, setupRequired: true, setupError: error.message, error: error.message })
+      this._set({ verified: false, setupError: this.state.setupRequired ? error.message : null, error: error.message })
       throw error
     }
   }) }

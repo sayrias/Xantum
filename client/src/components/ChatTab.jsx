@@ -603,7 +603,7 @@ export default function ChatTab({ connected }) {
           <button type="button" className={`chat-mic-button ${micMuted ? 'is-muted' : ''}`} onClick={toggleMic} aria-pressed={micMuted} aria-label={micMuted ? t("Mikrofonu aç") : t("Mikrofonu kapat")} title={micMuted ? t("Mikrofonu aç") : t("Mikrofonu kapat")}><i className={`fas ${micMuted ? 'fa-microphone-slash' : 'fa-microphone'}`} aria-hidden="true" /></button>
           <button type="button" className="chat-leave-button" onClick={leaveVoice} aria-label={t("Ses odasından ayrıl")} title={t("Ses odasından ayrıl")}><i className="fas fa-phone-slash" aria-hidden="true" /><span>{t("Ayrıl")}</span></button>
         </div>}
-        {inVoiceChannel && <div className={`chat-mic-status ${pttActive && !micMuted ? 'is-active' : ''}`} role="status">
+        {inVoiceChannel && <div className={`${!pttEnabled ? 'sr-only' : 'chat-mic-status'} ${pttActive && !micMuted ? 'is-active' : ''}`} role="status">
           {micMuted ? t("Mikrofonun kapalı") : pttEnabled ? <>{pttActive ? t("Sesin iletiliyor") : t("Basılı tut, konuş")} <kbd>{pttKey}</kbd></> : t("Mikrofonun açık")}
         </div>}
       </aside>

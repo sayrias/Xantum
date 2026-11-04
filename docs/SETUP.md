@@ -32,7 +32,9 @@ Use a package from [Downloads](https://github.com/sayrias/Xantum/releases) or fo
 2. Enter the server address and access key printed by the installer.
 3. Save, return to the home screen and connect.
 
-The app starts in English. Use the language selector in the title bar to switch between English and Türkçe instantly; your choice is saved.
+The app starts in English. Open **Settings → Language** to switch between English and Türkçe instantly; your choice is saved.
+
+![Language selection in Settings](assets/settings-preview.png)
 
 A private preconfigured package already contains these details. Share it only with people you authorize.
 
@@ -52,6 +54,30 @@ curl --fail https://YOUR_SERVER:51821/health
 ```
 
 Replace `YOUR_SERVER` with the address on the certificate. Never include the access key or private TLS key in a public issue.
+
+## Change the access key
+
+The standard installer stores the server key as `VPN_PIN` in `/opt/xantum-backend/.env`. Server updates preserve it; rerunning setup does not rotate it.
+
+Disconnect clients first. On the VPS, generate a new random key and edit the configuration:
+
+```bash
+openssl rand -hex 24
+sudo nano /opt/xantum-backend/.env
+```
+
+Replace the existing `VPN_PIN=...` value with the generated key, keeping one `VPN_PIN` entry and the other settings unchanged. Save the file, then restart the service:
+
+```bash
+sudo systemctl restart xantum-backend
+sudo systemctl is-active xantum-backend
+```
+
+The restart disconnects VPN, chat and voice sessions and discards in-memory chat state. Use **restart** for a key change; **reload** refreshes TLS certificates only.
+
+In each client, disconnect and release any retained protection, then open **Settings → Your server → Edit connection**, enter the new access key and save. Rebuild any private preconfigured packages with the new key. Update any private local copies of the old configuration too.
+
+If a key was committed publicly, treat it as exposed even after deleting the file. Changing the server key invalidates the old credential; deleting files or publishing a new release alone does not.
 
 ## TLS troubleshooting
 

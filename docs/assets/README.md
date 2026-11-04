@@ -9,3 +9,5 @@ python3 docs/assets/generate.py
 ```
 
 Headlines and button text are outlined for consistent rendering. Montserrat is distributed under the SIL Open Font License; font files are not included here. Check both compact and desktop layouts after changes.
+
+`chat-preview.png` and `settings-preview.png` show the current English interface at 740 × 600. Chat participants and messages are synthetic fixtures on a local test server; no VPN connection or production credentials are shown.

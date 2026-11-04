@@ -1,6 +1,5 @@
 import { t, useLocale } from './i18n/useLocale.jsx'
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import LanguageSelector from './components/LanguageSelector.jsx'
 import { connectDesktopLocale } from './i18n/core.mjs'
 import logoImg from './assets/logo.png'
 import ConnectionButton from './components/ConnectionButton.jsx'
@@ -153,7 +152,6 @@ export default function App() {
           </div>
           
           <div className="titlebar-controls">
-            <LanguageSelector />
             <button
               id="minimize-btn"
               className="titlebar-btn"
@@ -232,7 +230,7 @@ export default function App() {
           )}
 
           {/* ===== CHAT SEKMESİ (Persistant for Voice Chat) ===== */}
-          <div style={{ display: activeTab === 'chat' ? 'flex' : 'none', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ display: activeTab === 'chat' ? 'flex' : 'none', flex: 1, minHeight: 0, flexDirection: 'column', overflow: 'hidden' }}>
             <ChatTab connected={status.connected} />
           </div>
 

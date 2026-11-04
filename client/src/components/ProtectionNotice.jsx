@@ -9,6 +9,8 @@ export default function ProtectionNotice({ protection, connected, connecting, on
   if (!protection || (protection.state === 'inactive' && !protection.error)) return null
   const uncertain = protection.state === 'unknown' || protection.verified === false
   const guarded = protection.active && connected && !protection.blocked && !uncertain
+  // Routine success stays quiet; recovery and setup actions remain visible.
+  if (guarded && !protection.error) return null
   const needsSetup = protection.setupRequired
   const run = async action => {
     if (busy) return
