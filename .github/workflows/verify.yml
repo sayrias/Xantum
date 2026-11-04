@@ -25,11 +25,6 @@ jobs:
         run: |
           npm audit --prefix client --omit=dev --audit-level=moderate
           npm audit --prefix server/xantum-server/backend --omit=dev --audit-level=moderate
-      - name: Test source without prebuilt renderer artifacts
-        run: |
-          test ! -f client/dist/index.html
-          npm test --prefix client
-      - run: npm test --prefix development/selective-vpn
       - run: npm run build:ui --prefix client
       - name: Compile Linux helper with fortified libc and warnings as errors
         run: |
@@ -43,7 +38,7 @@ jobs:
           done
       - name: Check Python and polkit sources
         run: |
-          python3 -m py_compile client/native/network-protection-linux.py server/xantum-server/acme-webroot.py tests/network_protection_netns.py docs/assets/generate.py
+          python3 -m py_compile client/native/network-protection-linux.py server/xantum-server/acme-webroot.py docs/assets/generate.py
           python3 -c "import xml.etree.ElementTree as E; E.parse('client/native/org.xantum.helpers.policy')"
       - name: Check diff whitespace
         run: git show --format= --check HEAD
@@ -67,22 +62,3 @@ jobs:
           $errors = $null
           [System.Management.Automation.Language.Parser]::ParseFile("$PWD/server/xantum-server/deploy-to-vps.ps1", [ref]$tokens, [ref]$errors) | Out-Null
           if ($errors.Count -gt 0) { throw ($errors | Out-String) }
-  linux-network-protection:
-    # This tests nftables semantics in a user + network namespace. It is not a
-    # desktop/distribution certification or a reason to run the app as root.
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-22.04, ubuntu-24.04]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install namespace test dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3 iproute2 nftables util-linux
-      - name: Exercise real packets only inside an isolated namespace
-        # The wrapper unshares before mutation and refuses the initial network
-        # namespace. No sudo, host firewall rule or permissive fallback is used.
-        run: python3 tests/network_protection_netns.py

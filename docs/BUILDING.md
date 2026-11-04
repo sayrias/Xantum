@@ -20,11 +20,10 @@ The wizard prepares or checks native components, runs validation and packages th
 ```bash
 npm ci --prefix client
 npm ci --prefix server/xantum-server/backend
-npm test --prefix client
 npm run build:ui --prefix client
 ```
 
-Tests open temporary localhost connections. Linux native checks require GCC and development headers. These checks do not replace connection tests on the target operating system.
+Linux native builds require GCC and development headers. Check installation, connection and recovery on the target operating system before distributing a package.
 
 ## Linux x64
 

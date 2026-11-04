@@ -66,3 +66,8 @@ connection-profile.*.json
 .vscode/
 playwright-report/
 test-results/
+
+# Maintainer-only workspace content
+/development/
+/tests/
+/d
