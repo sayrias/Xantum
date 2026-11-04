@@ -30,7 +30,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getConnectedTime: () => ipcRenderer.invoke('vpn:get-connected-time'),
   },
 
-  
+
   // ---- Dosya/Config ----
   dialog: {
     openConfig: () => ipcRenderer.invoke('dialog:open-config'),
@@ -39,13 +39,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     save: (data) => ipcRenderer.invoke('config:save', data),
     list: () => ipcRenderer.invoke('config:list'),
   },
-  
+
   // ---- Pencere Kontrolü ----
   window: {
     minimize: () => ipcRenderer.send('window:minimize'),
     close: () => ipcRenderer.send('window:close'),
   },
-  
+
   // ---- Tray mesajları dinle ----
   onTrayToggle: (callback) => {
     const listener = () => callback()
@@ -53,7 +53,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('tray-toggle-vpn', listener)
   },
   onNetworkStats: (callback) => ipcRenderer.on('network-stats', (event, data) => callback(data)),
-  
+
   // Yeni özellikler
   setupServerViaSSH: (credentials) => ipcRenderer.invoke('setup-server-ssh', credentials),
   getNetworkStatus: () => ipcRenderer.invoke('get-network-status'),
@@ -71,7 +71,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('vpn-disconnected', listener)
   },
   autoRegisterVPN: () => ipcRenderer.invoke('auto-register-vpn'),
-  
+
   // Loglama
   log: (level, message) => ipcRenderer.send('app:log', { level, message }),
 

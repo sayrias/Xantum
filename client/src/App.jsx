@@ -113,7 +113,7 @@ export default function App() {
     <>
       {/* Arka plan */}
       <div className="app-background" />
-      
+
       <div className="app-container">
         {/* Custom titlebar */}
         <div className="titlebar">
@@ -123,7 +123,7 @@ export default function App() {
             </div>
             <span className="titlebar-title">Xantum</span>
           </div>
-          
+
           <div className="titlebar-tabs">
             <button
               className={`titlebar-tab-btn ${activeTab === 'home' ? 'active' : ''}`}
@@ -150,7 +150,7 @@ export default function App() {
               <span className="titlebar-tab-text">{t("Sohbet")}</span>
             </button>
           </div>
-          
+
           <div className="titlebar-controls">
             <button
               id="minimize-btn"
@@ -170,7 +170,7 @@ export default function App() {
             </button>
           </div>
         </div>
-        
+
         {/* Ana içerik */}
         <div className="app-main">
           <ProtectionNotice protection={status.ready ? status.protection : null} connected={status.connected} connecting={status.connecting || registering} onReconnect={handleToggle} onRelease={releaseProtection} onCheck={checkProtection} onInstall={installHelpers} />
@@ -194,11 +194,11 @@ export default function App() {
                   onClick={handleToggle}
                 />
               </div>
-              
+
               {/* Alt Alan: Durum ve İstatistikler Yan Yana */}
-              <div style={{ 
-                display: 'flex', 
-                gap: '40px', 
+              <div style={{
+                display: 'flex',
+                gap: '40px',
                 alignItems: 'flex-start',
                 justifyContent: 'space-between',
                 paddingBottom: '10px'
@@ -213,7 +213,7 @@ export default function App() {
                   />
 
                 </div>
-                
+
                 <div style={{ flex: 1 }}>
                   <StatsPanel stats={stats} connected={status.connected} />
                 </div>
@@ -236,7 +236,7 @@ export default function App() {
 
 
         </div>
-        
+
         {/* Alt bilgi çubuğu */}
         <div style={{
           display: 'flex',

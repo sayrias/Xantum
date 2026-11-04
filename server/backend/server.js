@@ -23,7 +23,7 @@ const SERVER_IP = process.env.VPN_IP || '127.0.0.1'; // Setup.sh bunu düzeltece
 // POST /register - İstemci uygulaması ilk açıldığında otomatik istek atar
 app.post('/register', (req, res) => {
   const { pin, publicKey } = req.body;
-  
+
   if (pin !== SERVER_PIN) {
     return res.status(403).json({ error: 'Geçersiz Katılım Şifresi' });
   }
@@ -35,16 +35,16 @@ app.post('/register', (req, res) => {
   // add-peer.sh scriptini çalıştırarak wireguard'a ekle ve configi al
   // NOT: add-peer.sh root gerektirdiği için nodejs process'inin yetkisi olmalı veya sudo ayarlanmalı.
   // Burada add-peer.sh içindeki yapıyı kullanarak yeni IP vereceğiz.
-  
+
   // Güvenli isim oluştur
   const peerName = 'peer_' + Math.random().toString(36).substring(2, 9);
-  
+
   exec(`sudo /usr/local/bin/xantum/add-peer-api.sh "${peerName}" "${publicKey}"`, (err, stdout, stderr) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ error: 'VPN kaydı yapılamadı.' });
     }
-    
+
     // add-peer-api.sh JSON formatında dönecek şekilde ayarlanacak
     try {
       const configData = JSON.parse(stdout);
@@ -60,7 +60,7 @@ let onlineUsers = {};
 
 io.on('connection', (socket) => {
   console.log('Bir kullanıcı bağlandı:', socket.id);
-  
+
   socket.on('join_network', (data) => {
     // data = { username, lanIp }
     onlineUsers[socket.id] = { ...data, id: socket.id };
@@ -83,7 +83,7 @@ io.on('connection', (socket) => {
   socket.on('join_voice_channel', () => {
     // Sadece ses kanalında olanlara sinyal göndermek için bir odaya katılalım
     socket.join('voice_channel');
-    
+
     // Odada daha önceden olan diğer kişileri bulup, yeni gelene haber ver
     const clients = io.sockets.adapter.rooms.get('voice_channel');
     const existingUsers = [];

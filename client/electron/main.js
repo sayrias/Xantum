@@ -553,7 +553,7 @@ handle('dialog:open-config', async () => {
     ],
     properties: ['openFile']
   })
-  
+
   if (!result.canceled && result.filePaths.length > 0) {
     const configPath = result.filePaths[0]
     const content = JSON.stringify(readConfig(configPath), null, 2)
@@ -643,7 +643,7 @@ if (!gotSingleInstanceLock) {
     protectionReady = xtpClient.probeProtection().catch(error => { appLog('error', 'Ağ koruması denetlenemedi: ' + error.message); throw error })
     // Attach a handler even when the renderer has not requested a protected action.
     protectionReady.catch(() => {})
-    
+
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         createWindow()

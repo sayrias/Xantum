@@ -12,7 +12,7 @@ import { formatBytes, formatSpeed } from '../hooks/useNetworkStats'
 export default function StatsPanel({ stats, connected }) {
   const { locale, numberLocale } = useLocale()
   const { rxTotal, txTotal, rxSpeed, txSpeed, history } = stats
-  
+
   const rxFormatted = formatBytes(rxTotal, numberLocale)
   const txFormatted = formatBytes(txTotal, numberLocale)
   const rxSpeedFmt  = formatSpeed(rxSpeed, numberLocale)
@@ -22,7 +22,7 @@ export default function StatsPanel({ stats, connected }) {
   return (
     <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', opacity: connected ? 1 : 0.5, pointerEvents: connected ? 'auto' : 'none' }}>
       <span className="section-title"><i className="fas fa-chart-bar" style={{ marginRight: '6px' }}></i>{t(" Canlı İstatistikler")}</span>
-      
+
       {/* Hız kartları */}
       <div className="stats-grid">
         {/* Download */}
@@ -38,7 +38,7 @@ export default function StatsPanel({ stats, connected }) {
           <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{t(" Toplam: ")}{rxFormatted.value} {rxFormatted.unit}
           </div>
         </div>
-        
+
         {/* Upload */}
         <div className="stat-item">
           <div className="stat-icon-label">

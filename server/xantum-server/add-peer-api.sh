@@ -4,7 +4,7 @@
 # Kullanım: ./add-peer-api.sh "isim" "istemci_public_key"
 # ============================================================
 
-if [[ -z "$1" || -z "$2" ]]; then 
+if [[ -z "$1" || -z "$2" ]]; then
     echo '{"error": "Eksik parametre"}'
     exit 1
 fi

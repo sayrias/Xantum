@@ -12,50 +12,50 @@
   --color-bg-secondary:  #0d1526;
   --color-bg-card:       rgba(255, 255, 255, 0.04);
   --color-bg-card-hover: rgba(255, 255, 255, 0.07);
-  
+
   /* Gradient'ler */
   --gradient-primary:    linear-gradient(135deg, #6C63FF 0%, #3ECFCF 100%);
   --gradient-connected:  linear-gradient(135deg, #00d4aa 0%, #00b4d8 100%);
   --gradient-disconnected: linear-gradient(135deg, #ff4560 0%, #ff6b6b 100%);
   --gradient-connecting: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
   --gradient-glow:       radial-gradient(ellipse at center, rgba(108, 99, 255, 0.3) 0%, transparent 70%);
-  
+
   /* Accent renkler */
   --accent-purple:  #6C63FF;
   --accent-cyan:    #3ECFCF;
   --accent-green:   #00d4aa;
   --accent-red:     #ff4560;
   --accent-orange:  #f7971e;
-  
+
   /* Metin */
   --text-primary:   #f0f4ff;
   --text-secondary: #8892a4;
   --text-muted:     #4a5568;
-  
+
   /* Border */
   --border-glass:   rgba(255, 255, 255, 0.08);
   --border-glow:    rgba(108, 99, 255, 0.4);
-  
+
   /* Glassmorphism */
   --glass-blur:     20px;
   --glass-bg:       rgba(255, 255, 255, 0.04);
   --glass-border:   1px solid rgba(255, 255, 255, 0.08);
-  
+
   /* Gölgeler */
   --shadow-card:    0 8px 32px rgba(0, 0, 0, 0.4);
   --shadow-glow-purple: 0 0 40px rgba(108, 99, 255, 0.3);
   --shadow-glow-cyan:   0 0 40px rgba(62, 207, 207, 0.3);
   --shadow-glow-green:  0 0 40px rgba(0, 212, 170, 0.4);
-  
+
   /* Tipografi */
   --font-main: 'Inter', -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-  
+
   /* Animasyon */
   --transition-fast:   0.15s ease;
   --transition-normal: 0.25s ease;
   --transition-slow:   0.4s ease;
-  
+
   /* Boyutlar */
   --radius-sm:  8px;
   --radius-md:  12px;
@@ -316,7 +316,7 @@ body {
 .connection-ring-outer.connecting {
   border-color: transparent;
   animation: spin-ring 1.2s linear infinite;
-  background: 
+  background:
     linear-gradient(var(--color-bg-primary), var(--color-bg-primary)) padding-box,
     var(--gradient-connecting) border-box;
 }
@@ -858,9 +858,9 @@ body {
 
 /* Yükleme durumu */
 .skeleton {
-  background: linear-gradient(90deg, 
-    rgba(255,255,255,0.04) 25%, 
-    rgba(255,255,255,0.08) 50%, 
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.08) 50%,
     rgba(255,255,255,0.04) 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s infinite;

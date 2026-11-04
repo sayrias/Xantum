@@ -13,14 +13,14 @@ while read peer_pubkey; do
 
     PEER_IP=$(wg show wg0 allowed-ips | grep "$peer_pubkey" | awk '{print $2}' | cut -d'/' -f1)
     LATEST_HANDSHAKE=$(wg show wg0 latest-handshakes | grep "$peer_pubkey" | awk '{print $2}')
-    
+
     # Sadece aktif peer'ları veya hepsini gösterebiliriz, şimdilik hepsini gösterelim
     if [ "$FIRST" = true ]; then
         FIRST=false
     else
         PEERS_JSON="$PEERS_JSON,"
     fi
-    
+
     PEERS_JSON="$PEERS_JSON {\"publicKey\": \"$peer_pubkey\", \"ip\": \"$PEER_IP\", \"latestHandshake\": $LATEST_HANDSHAKE}"
 done < <(wg show wg0 peers)
 

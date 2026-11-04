@@ -151,8 +151,8 @@ export default function SettingsTab() {
         if (streamRef.current) {
           streamRef.current.getTracks().forEach(t => t.stop())
         }
-        
-        let audioConstraints = { 
+
+        let audioConstraints = {
           deviceId: settings.micDeviceId !== 'default' ? { exact: settings.micDeviceId } : undefined,
           autoGainControl: false
         };
@@ -163,22 +163,22 @@ export default function SettingsTab() {
           return;
         }
         streamRef.current = stream
-        
+
         localAudioContext = new (window.AudioContext || window.webkitAudioContext)()
-        
+
         const source = localAudioContext.createMediaStreamSource(stream)
-        
+
         // Kazanç (Gain) ayarı
         const gainNode = localAudioContext.createGain()
         gainNode.gain.value = (settings.micGain !== undefined ? settings.micGain : 100) / 100
-        
+
         source.connect(gainNode)
 
         const analyser = localAudioContext.createAnalyser()
         analyser.fftSize = 256
         gainNode.connect(analyser)
         analyserRef.current = analyser
-        
+
         // Kendimi duy (Loopback) - Master Volume da ekle
         if (settings.micLoopback) {
           const masterGain = localAudioContext.createGain()
@@ -186,9 +186,9 @@ export default function SettingsTab() {
           gainNode.connect(masterGain)
           masterGain.connect(localAudioContext.destination)
         }
-        
+
         const dataArray = new Uint8Array(analyser.frequencyBinCount)
-        
+
         // Yazılımsal basit bir gürültü kapısı (Noise Gate) sadece görsel test için
         const checkVolume = () => {
           if (!active) return;
@@ -196,19 +196,19 @@ export default function SettingsTab() {
             analyserRef.current.getByteFrequencyData(dataArray)
             const sum = dataArray.reduce((a, b) => a + b, 0)
             const avg = sum / dataArray.length
-            setVolume(Math.min(100, Math.round((avg / 128) * 100))) 
+            setVolume(Math.min(100, Math.round((avg / 128) * 100)))
           }
           animationRef.current = requestAnimationFrame(checkVolume)
         }
         checkVolume()
-        
+
       } catch (err) {
         console.error(t("Mikrofon testi başlatılamadı:"), err)
       }
     }
-    
+
     startMicTest()
-    
+
     return () => {
       active = false;
       if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop())
@@ -244,7 +244,7 @@ export default function SettingsTab() {
 
   return (
     <div className="glass-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
-      
+
       <LanguageSelector />
       <ServerSettings />
       {/* GENEL AYARLAR */}
@@ -252,18 +252,18 @@ export default function SettingsTab() {
         <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: 'var(--text-primary)' }}>
           <i className="fas fa-sliders-h" style={{ marginRight: '6px' }}></i>{t(" Genel Ayarlar ")}</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          
+
           <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <h4 style={{ margin: '0 0 6px 0', fontSize: '12px' }}>{t("Kullanıcı Adı (Takma Ad)")}</h4>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <input 
-                type="text" 
-                value={tempName} 
+              <input
+                type="text"
+                value={tempName}
                 onChange={e => setTempName(e.target.value)}
                 placeholder={t("Ağda görünecek isminiz...")}
                 style={{ flex: 1, padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', fontSize: '11px', outline: 'none' }}
               />
-              <button 
+              <button
                 onClick={handleSaveNickname}
                 style={{ background: nameSaved ? 'var(--accent-green)' : 'var(--accent-purple)', color: nameSaved ? '#000' : '#fff', border: 'none', padding: '8px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', transition: '0.3s' }}
               >
@@ -288,7 +288,7 @@ export default function SettingsTab() {
               <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>{t(" IPv4 trafiğin ve DNS isteklerin XTP tüneline yönlendirilir; IPv6 çıkışı engellenir.")}<br />{t(" Bağlantı kesilirse trafik kilitli kalır. Normal internete dönmek için korumayı kaldırabilirsin. ")}</p>
             </div>
           </div>
-          
+
         </div>
       </div>
 
@@ -298,13 +298,13 @@ export default function SettingsTab() {
       <div>
         <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: 'var(--text-primary)' }}>
           <i className="fas fa-microphone" style={{ marginRight: '6px' }}></i>{t(" Ses ve Mikrofon ")}</h3>
-        
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          
+
           <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <h4 style={{ margin: '0 0 6px 0', fontSize: '12px' }}>{t("Giriş Cihazı (Mikrofon)")}</h4>
-            <select 
-              value={settings.micDeviceId} 
+            <select
+              value={settings.micDeviceId}
               onChange={e => updateDevice('micDeviceId', e.target.value)}
               style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', fontSize: '11px', outline: 'none' }}
             >
@@ -313,16 +313,16 @@ export default function SettingsTab() {
                 <option key={d.deviceId} value={d.deviceId}>{d.label || t('Mikrofon ({id})', { id: d.deviceId.slice(0,5) })}</option>
               ))}
             </select>
-            
+
             <div style={{ marginTop: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>
                 <span>{t("Mikrofon Testi")}</span>
                 <span>{volume}%</span>
               </div>
               <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ 
-                  height: '100%', 
-                  width: `${volume}%`, 
+                <div style={{
+                  height: '100%',
+                  width: `${volume}%`,
                   background: volume > 80 ? '#ff4757' : volume > 40 ? 'var(--accent-green)' : 'var(--accent-purple)',
                   transition: 'width 0.1s ease, background 0.2s ease'
                 }} />
@@ -341,9 +341,9 @@ export default function SettingsTab() {
                   <span>{t("Mikrofon Ses Gücü (Gain)")}</span>
                   <span>{settings.micGain !== undefined ? settings.micGain : 100}%</span>
                 </div>
-                <input 
-                  type="range" 
-                  min="0" max="200" 
+                <input
+                  type="range"
+                  min="0" max="200"
                   value={settings.micGain !== undefined ? settings.micGain : 100}
                   onChange={(e) => updateDevice('micGain', parseInt(e.target.value))}
                   style={{ width: '100%', accentColor: 'var(--accent-purple)' }}
@@ -354,8 +354,8 @@ export default function SettingsTab() {
 
           <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <h4 style={{ margin: '0 0 6px 0', fontSize: '12px' }}>{t("Çıkış Cihazı (Hoparlör)")}</h4>
-            <select 
-              value={settings.speakerDeviceId} 
+            <select
+              value={settings.speakerDeviceId}
               onChange={e => updateDevice('speakerDeviceId', e.target.value)}
               style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', fontSize: '11px', outline: 'none', marginBottom: '10px' }}
             >
@@ -364,15 +364,15 @@ export default function SettingsTab() {
                 <option key={d.deviceId} value={d.deviceId}>{d.label || t('Hoparlör ({id})', { id: d.deviceId.slice(0,5) })}</option>
               ))}
             </select>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-primary)' }}>
                 <span>{t("Ana Çıkış Sesi (Master Volume)")}</span>
                 <span>{settings.masterVolume !== undefined ? settings.masterVolume : 100}%</span>
               </div>
-              <input 
-                type="range" 
-                min="0" max="100" 
+              <input
+                type="range"
+                min="0" max="100"
                 value={settings.masterVolume !== undefined ? settings.masterVolume : 100}
                 onChange={(e) => updateDevice('masterVolume', parseInt(e.target.value))}
                 style={{ width: '100%', accentColor: '#00d4aa' }}

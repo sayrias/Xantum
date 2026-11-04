@@ -46,7 +46,7 @@ export function useNetworkStats(connected, interfaceName) {
     uptime: 0,
     history: [], // Son 30 saniyenin hız verileri (grafik için)
   })
-  
+
   const prevStats = useRef(null)
   const prevTime = useRef(null)
   const interval = useRef(null)
@@ -71,7 +71,7 @@ export function useNetworkStats(connected, interfaceName) {
 
     // Bağlandı
     connectedTime.current = Date.now()
-    
+
     // Uptime sayacı
     uptimeInterval.current = setInterval(() => {
       const elapsed = Date.now() - (connectedTime.current || Date.now())
@@ -83,21 +83,21 @@ export function useNetworkStats(connected, interfaceName) {
       try {
         const result = await API?.vpn.stats(interfaceName)
         if (!result?.stats) return
-        
+
         const now = Date.now()
         const { rx, tx } = result.stats
-        
+
         let rxSpeed = 0, txSpeed = 0
-        
+
         if (prevStats.current && prevTime.current) {
           const dt = (now - prevTime.current) / 1000 // saniye
           rxSpeed = Math.max(0, (rx - prevStats.current.rx) / dt)
           txSpeed = Math.max(0, (tx - prevStats.current.tx) / dt)
         }
-        
+
         prevStats.current = { rx, tx }
         prevTime.current = now
-        
+
         setStats(prev => ({
           ...prev,
           rxTotal: rx,
@@ -113,10 +113,10 @@ export function useNetworkStats(connected, interfaceName) {
         // Stats alınamadı
       }
     }
-    
+
     fetchStats()
     interval.current = setInterval(fetchStats, 1000)
-    
+
     return () => {
       clearInterval(interval.current)
       clearInterval(uptimeInterval.current)
